@@ -1,0 +1,82 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-08-27 09:13:02.344385",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"webhook_settings_column",
+		"webhook_name",
+		"webhook_url",
+		"column_break_ghmx",
+		"client_id",
+		"tenant_id",
+		"client_secret"
+	],
+	"fields": [
+		{
+			"fieldname": "webhook_name",
+			"fieldtype": "Data",
+			"in_list_view": 1,
+			"label": "Name",
+			"reqd": 1
+		},
+		{
+			"fieldname": "webhook_url",
+			"fieldtype": "Data",
+			"in_list_view": 1,
+			"label": "Webhook URL"
+		},
+		{
+			"fieldname": "column_break_ghmx",
+			"fieldtype": "Column Break",
+			"label": "Graph Settings"
+		},
+		{
+			"fieldname": "client_id",
+			"fieldtype": "Data",
+			"label": "Client ID"
+		},
+		{
+			"fieldname": "tenant_id",
+			"fieldtype": "Data",
+			"label": "Tenant ID"
+		},
+		{
+			"fieldname": "client_secret",
+			"fieldtype": "Password",
+			"label": "Client Secret"
+		},
+		{
+			"fieldname": "webhook_settings_column",
+			"fieldtype": "Column Break",
+			"label": "Webhook Settings"
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"links": [],
+	"modified": "2025-08-27 09:24:35.136698",
+	"modified_by": "Administrator",
+	"module": "Teams",
+	"name": "Teams Webhook URL",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"row_format": "Dynamic",
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

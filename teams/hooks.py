@@ -1,3 +1,6 @@
+# Copyright (c) 2025, AgriTheory and contributors
+# For license information, please see license.txt
+
 app_name = "teams"
 app_title = "Teams"
 app_publisher = "AgriTheory"
@@ -26,7 +29,9 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/teams/css/teams.css"
-# app_include_js = "/assets/teams/js/teams.js"
+app_include_js = [
+	"teams.bundle.js",
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/teams/css/teams.css"
@@ -241,4 +246,3 @@ app_license = "mit"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-

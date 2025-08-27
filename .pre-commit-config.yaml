@@ -2,68 +2,72 @@ exclude: 'node_modules|.git'
 default_stages: [pre-commit]
 fail_fast: false
 
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
-        files: "teams.*"
-        exclude: ".*json$|.*txt$|.*csv|.*md|.*svg"
+        files: 'teams.*'
+        exclude: '.*json$|.*txt$|.*csv|.*md|.*svg'
+      - id: check-yaml
+      - id: no-commit-to-branch
+        args: ['--branch', 'version-15']
       - id: check-merge-conflict
       - id: check-ast
       - id: check-json
       - id: check-toml
-      - id: check-yaml
       - id: debug-statements
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.1
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.17.0
     hooks:
-      - id: ruff
-        name: "Run ruff import sorter"
-        args: ["--select=I", "--fix"]
+      - id: pyupgrade
+        args: ['--py310-plus']
 
-      - id: ruff
-        name: "Run ruff linter"
+  - repo: https://github.com/agritheory/black
+    rev: 951ccf4d5bb0d692b457a5ebc4215d755618eb68
+    hooks:
+      - id: black
 
-      - id: ruff-format
-        name: "Run ruff formatter"
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1
+    hooks:
+      - id: autoflake
+        args: [--remove-all-unused-imports, --in-place]
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.7.1
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        additional_dependencies: ['flake8-bugbear']
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli
+
+  - repo: https://github.com/agritheory/test_utils
+    rev: v1.0.0
+    hooks:
+      - id: update_pre_commit_config
+      - id: mypy
+      - id: validate_copyright
+        files: '\.(js|ts|py|md)$'
+        args: ['--app', 'teams']
+      - id: clean_customized_doctypes
+        args: ['--app', 'teams']
+      - id: validate_customizations
+
+  - repo: local
     hooks:
       - id: prettier
-        types_or: [javascript, vue, scss]
-        # Ignore any files that might contain jinja / bundles
-        exclude: |
-            (?x)^(
-                teams/public/dist/.*|
-                .*node_modules.*|
-                .*boilerplate.*|
-                teams/templates/includes/.*|
-                teams/public/js/lib/.*
-            )$
-
-
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.44.0
-    hooks:
-      - id: eslint
-        types_or: [javascript]
-        args: ['--quiet']
-        # Ignore any files that might contain jinja / bundles
-        exclude: |
-            (?x)^(
-                teams/public/dist/.*|
-                cypress/.*|
-                .*node_modules.*|
-                .*boilerplate.*|
-                teams/templates/includes/.*|
-                teams/public/js/lib/.*
-            )$
+        name: prettier
+        entry: npx prettier -w . --config .prettierrc.cjs --ignore-path .prettierignore
+        language: system
 
 ci:
-    autoupdate_schedule: weekly
-    skip: []
-    submodules: false
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false
