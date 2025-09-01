@@ -47,6 +47,13 @@ repos:
       - id: codespell
         additional_dependencies:
           - tomli
+        exclude: >
+          (?x)^(
+            .*\.lock|
+            .*\.pyc|
+            \.tox
+            \.mypy_cache
+          )$
 
   - repo: https://github.com/agritheory/test_utils
     rev: v1.0.0
