@@ -1,4 +1,4 @@
-# Copyright (c) 2024, AgriTheory and contributors
+# Copyright (c) 2025, AgriTheory and contributors
 # For license information, please see license.txt
 
 import json
@@ -12,7 +12,7 @@ from frappe.utils.jinja import validate_template
 from frappe.utils import get_url_to_form
 
 
-class ATNotification(Notification):
+class TeamsNotification(Notification):
 	# track overrides
 	def validate(self):
 		if self.channel in ("Email", "Slack", "Slack DM", "Teams DM", "System Notification"):
