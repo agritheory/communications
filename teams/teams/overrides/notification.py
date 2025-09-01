@@ -82,9 +82,7 @@ class ATNotification(Notification):
 				self.log_error("Document update failed")
 
 	def get_slack_user_id(self, email):
-		slack_token = frappe.db.get_value(
-			"Slack Webhook URL", self.slack_webhook_url, "webhook_url"
-		)
+		slack_token = frappe.db.get_value("Slack Webhook URL", self.slack_webhook_url, "webhook_url")
 		slack_client = WebClient(token=slack_token)
 		try:
 			response = slack_client.users_lookupByEmail(email=email)
@@ -108,9 +106,7 @@ class ATNotification(Notification):
 			if users:
 				return users[0].get("id")
 
-		tenant_domain = frappe.db.get_value(
-			"Teams Webhook URL", self.teams_webhook_url, "tenant_domain"
-		)
+		tenant_domain = frappe.db.get_value("Teams Webhook URL", self.teams_webhook_url, "tenant_domain")
 		if tenant_domain:
 			external_upn = email.replace("@", "_") + f"#EXT#@{tenant_domain}"
 			response = client.get(
@@ -212,9 +208,7 @@ class ATNotification(Notification):
 					)
 					continue
 				else:
-					self.log_error(
-						f"Failed to create chat with {recipient}: {chat_response.status_code}"
-					)
+					self.log_error(f"Failed to create chat with {recipient}: {chat_response.status_code}")
 					continue
 
 				body_content = f"<p>{message_text}</p>"
@@ -223,9 +217,7 @@ class ATNotification(Notification):
 
 				message_data = {"body": {"contentType": "html", "content": body_content}}
 
-				msg_response = client.post(
-					f"{client.base_url}/chats/{chat_id}/messages", json=message_data
-				)
+				msg_response = client.post(f"{client.base_url}/chats/{chat_id}/messages", json=message_data)
 
 				if msg_response.status_code != 201:
 					self.log_error(f"Failed to send Teams message to {recipient}: {msg_response.text}")
