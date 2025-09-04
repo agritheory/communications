@@ -13,12 +13,17 @@ def start_teams_call(phone_number, doctype, docname):
 
 PHONE_NUMBER_PATTERN = re.compile(
 	r"^"
-	r"(?:\+?1[\s\-\.]?)?"  # Optional country code (+1 or 1)
-	r"(?:\([0-9]{3}\)|[0-9]{3})"  # Area code with or without parentheses
+	# International prefix OR North American format
+	r"(?:\+[1-9][0-9]{0,3}[\s\-\.]?)?"  # Optional international prefix (+ followed by 1-4 digit country code)
+	# Area code - EITHER with both parentheses OR without any
+	r"(?:(?:\([0-9]{3}\))|(?:[0-9]{3}))"  # Enforces matching parentheses
 	r"[\s\-\.]?"  # Optional separator
 	r"[0-9]{3}"  # First 3 digits
 	r"[\s\-\.]?"  # Optional separator
 	r"[0-9]{4}"  # Last 4 digits
+	# Mobile device special characters (pause, wait, etc.)
+	r"(?:[,;pwPW#*]+[0-9]+)*"  # Optional pause/wait/special chars followed by digits
+	# Extension (optional)
 	r"(?:"  # Optional extension group
 	r"[\s,]*"  # Optional space or comma before extension
 	r"(?:ext\.?|x)"  # Extension prefix (ext, ext., or x)

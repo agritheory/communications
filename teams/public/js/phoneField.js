@@ -41,10 +41,10 @@ export class PhoneField {
 		const $callButton = $(`
 			<div class="input-group-append">
 				<button class="btn btn-call"
-								type="button"
-								title="Call this number"
-								aria-label="Call this number"
-								tabindex="0">
+					type="button"
+					title="Call this number"
+					aria-label="Call this number"
+					tabindex="0">
 					<i class="fa fa-phone"></i>
 				</button>
 			</div>
