@@ -58,4 +58,3 @@ bench list-apps
 
 bench start &> bench_run_logs.txt &
 CI=Yes &
-bench execute 'teams.tests.setup.before_test'
