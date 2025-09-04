@@ -1,4 +1,4 @@
-name: Vitest
+name: JavaScript Tests (Vitest)
 
 on:
   push:
