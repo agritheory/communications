@@ -1,10 +1,10 @@
-name: JavaScript Tests (Vitest)
+name: Vitest
 
 on:
-	push:
-		branches: [ version-15 ]
-	pull_request:
-		branches: [ version-15 ]
+  push:
+    branches: [ version-15 ]
+  pull_request:
+    branches: [ version-15 ]
 
 jobs:
 	vitest:
