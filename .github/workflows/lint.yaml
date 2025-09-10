@@ -24,7 +24,7 @@ jobs:
         run: pip install mypy
 
       - name: Install mypy types
-        run: mypy ./teams/. --install-types --non-interactive
+        run: mypy ./communications/. --install-types --non-interactive
 
       - name: Run mypy
         uses: sasanquaneuf/mypy-github-action@releases/v1

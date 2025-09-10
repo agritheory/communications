@@ -1,10 +1,10 @@
 # Copyright (c) 2025, AgriTheory and contributors
 # For license information, please see license.txt
 
-app_name = "teams"
-app_title = "Teams"
+app_name = "communications"
+app_title = "Communications"
 app_publisher = "AgriTheory"
-app_description = "Microsoft Teams integration for ERPNext"
+app_description = "Messaging and telephony extensions for Frappe"
 app_email = "support@agritheory.dev"
 app_license = "mit"
 
@@ -16,11 +16,11 @@ app_license = "mit"
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
 # 	{
-# 		"name": "teams",
-# 		"logo": "/assets/teams/logo.png",
-# 		"title": "Teams",
-# 		"route": "/teams",
-# 		"has_permission": "teams.api.permission.has_app_permission"
+# 		"name": "communications",
+# 		"logo": "/assets/communications/logo.png",
+# 		"title": "communications",
+# 		"route": "/communications",
+# 		"has_permission": "communications.api.permission.has_app_permission"
 # 	}
 # ]
 
@@ -28,17 +28,17 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/teams/css/teams.css"
+# app_include_css = "/assets/communications/css/communications.css"
 app_include_js = [
-	"teams.bundle.js",
+	"communications.bundle.js",
 ]
 
 # include js, css files in header of web template
-# web_include_css = "/assets/teams/css/teams.css"
-# web_include_js = "/assets/teams/js/teams.js"
+# web_include_css = "/assets/communications/css/communications.css"
+# web_include_js = "/assets/communications/js/communications.js"
 
 # include custom scss in every website theme (without file extension ".scss")
-# website_theme_scss = "teams/public/scss/website"
+# website_theme_scss = "communications/public/scss/website"
 
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
@@ -56,7 +56,7 @@ app_include_js = [
 # Svg Icons
 # ------------------
 # include app icons in desk
-# app_include_icons = "teams/public/icons.svg"
+# app_include_icons = "communications/public/icons.svg"
 
 # Home Pages
 # ----------
@@ -80,43 +80,43 @@ app_include_js = [
 
 # add methods and filters to jinja environment
 # jinja = {
-# 	"methods": "teams.utils.jinja_methods",
-# 	"filters": "teams.utils.jinja_filters"
+# 	"methods": "communications.utils.jinja_methods",
+# 	"filters": "communications.utils.jinja_filters"
 # }
 
 # Installation
 # ------------
 
-# before_install = "teams.install.before_install"
-# after_install = "teams.install.after_install"
+# before_install = "communications.install.before_install"
+# after_install = "communications.install.after_install"
 
 # Uninstallation
 # ------------
 
-# before_uninstall = "teams.uninstall.before_uninstall"
-# after_uninstall = "teams.uninstall.after_uninstall"
+# before_uninstall = "communications.uninstall.before_uninstall"
+# after_uninstall = "communications.uninstall.after_uninstall"
 
 # Integration Setup
 # ------------------
 # To set up dependencies/integrations with other apps
 # Name of the app being installed is passed as an argument
 
-# before_app_install = "teams.utils.before_app_install"
-# after_app_install = "teams.utils.after_app_install"
+# before_app_install = "communications.utils.before_app_install"
+# after_app_install = "communications.utils.after_app_install"
 
 # Integration Cleanup
 # -------------------
 # To clean up dependencies/integrations with other apps
 # Name of the app being uninstalled is passed as an argument
 
-# before_app_uninstall = "teams.utils.before_app_uninstall"
-# after_app_uninstall = "teams.utils.after_app_uninstall"
+# before_app_uninstall = "communications.utils.before_app_uninstall"
+# after_app_uninstall = "communications.utils.after_app_uninstall"
 
 # Desk Notifications
 # ------------------
 # See frappe.core.notifications.get_notification_config
 
-# notification_config = "teams.notifications.get_notification_config"
+# notification_config = "communications.notifications.get_notification_config"
 
 # Permissions
 # -----------
@@ -135,7 +135,7 @@ app_include_js = [
 # Override standard doctype classes
 
 override_doctype_class = {
-	"Notification": "teams.teams.overrides.notification.TeamsNotification",
+	"Notification": "communications.communications.overrides.notification.communicationsNotification",
 }
 
 # Document Events
@@ -155,39 +155,39 @@ override_doctype_class = {
 
 # scheduler_events = {
 # 	"all": [
-# 		"teams.tasks.all"
+# 		"communications.tasks.all"
 # 	],
 # 	"daily": [
-# 		"teams.tasks.daily"
+# 		"communications.tasks.daily"
 # 	],
 # 	"hourly": [
-# 		"teams.tasks.hourly"
+# 		"communications.tasks.hourly"
 # 	],
 # 	"weekly": [
-# 		"teams.tasks.weekly"
+# 		"communications.tasks.weekly"
 # 	],
 # 	"monthly": [
-# 		"teams.tasks.monthly"
+# 		"communications.tasks.monthly"
 # 	],
 # }
 
 # Testing
 # -------
 
-# before_tests = "teams.install.before_tests"
+# before_tests = "communications.install.before_tests"
 
 # Overriding Methods
 # ------------------------------
 #
 # override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "teams.event.get_events"
+# 	"frappe.desk.doctype.event.event.get_events": "communications.event.get_events"
 # }
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
 # override_doctype_dashboards = {
-# 	"Task": "teams.task.get_dashboard_data"
+# 	"Task": "communications.task.get_dashboard_data"
 # }
 
 # exempt linked doctypes from being automatically cancelled
@@ -201,13 +201,13 @@ override_doctype_class = {
 
 # Request Events
 # ----------------
-# before_request = ["teams.utils.before_request"]
-# after_request = ["teams.utils.after_request"]
+# before_request = ["communications.utils.before_request"]
+# after_request = ["communications.utils.after_request"]
 
 # Job Events
 # ----------
-# before_job = ["teams.utils.before_job"]
-# after_job = ["teams.utils.after_job"]
+# before_job = ["communications.utils.before_job"]
+# after_job = ["communications.utils.after_job"]
 
 # User Data Protection
 # --------------------
@@ -237,7 +237,7 @@ override_doctype_class = {
 # --------------------------------
 
 # auth_hooks = [
-# 	"teams.auth.validate"
+# 	"communications.auth.validate"
 # ]
 
 # Automatically update python controller files with type annotations for this app.

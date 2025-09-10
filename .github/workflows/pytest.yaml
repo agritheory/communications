@@ -89,12 +89,12 @@ jobs:
         working-directory: /home/runner/frappe-bench
         run: |
           source env/bin/activate
-          cd apps/teams
+          cd apps/communications
           poetry install
-          pytest --cov=teams --cov-report=xml --disable-warnings -s | tee pytest-coverage.txt
+          pytest --cov=communications --cov-report=xml --disable-warnings -s | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: /home/runner/frappe-bench/apps/teams/pytest-coverage.txt
-          junitxml-path: /home/runner/frappe-bench/apps/teams/coverage.xml
+          pytest-coverage-path: /home/runner/frappe-bench/apps/communications/pytest-coverage.txt
+          junitxml-path: /home/runner/frappe-bench/apps/communications/coverage.xml

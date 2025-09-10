@@ -1,9 +1,9 @@
 <!-- Copyright (c) 2024, AgriTheory and contributors
 For license information, please see license.txt-->
 
-## Teams
+## Communications
 
-Microsoft Teams integration for ERPNext
+Messaging and telephony extensions for Frappe
 
 #### License
 
@@ -25,11 +25,11 @@ bench use {{ site name }}
 ```
 Download the ERPNext app, other dependencies, and this application
 ```
-bench get-app teams --branch version-15 git@github.com:agritheory/teams.git
+bench get-app communications --branch version-15 git@github.com:agritheory/communications.git
 ```
 Install all apps into the site
 ```
-bench install-app teams
+bench install-app communications
 ```
 Set developer mode in `site_config.json`
 ```
@@ -52,19 +52,19 @@ bench build
 
 Setup test data
 ```shell
-bench execute 'teams.tests.setup.before_test'
+bench execute 'communications.tests.setup.before_test'
 # for complete reset to run before tests:
-bench reinstall --yes --admin-password admin --mariadb-root-password admin && bench execute 'teams.tests.setup.before_test'
+bench reinstall --yes --admin-password admin --mariadb-root-password admin && bench execute 'communications.tests.setup.before_test'
 ```
 
 To run mypy
 ```shell
 source env/bin/activate
-mypy ./apps/teams/teams --ignore-missing-imports
+mypy ./apps/communications/communications --ignore-missing-imports
 ```
 
 To run pytest
 ```shell
 source env/bin/activate
-pytest ./apps/teams/teams/tests -s
+pytest ./apps/communications/communications/tests -s
 ```

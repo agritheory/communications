@@ -1,6 +1,6 @@
 [project]
-name = "teams"
-description = "Electronic Payments for ERPNext"
+name = "communications"
+description = "Messaging and telephony extensions for Frappe"
 authors = [
     { name = "AgriTheory", email = "support@agritheory.dev"}
 ]
@@ -9,12 +9,12 @@ license = { file = "LICENSE" }
 dynamic = ["dependencies", "version", "requires-python"]
 
 [project.urls]
-homepage = "https://github.com/agritheory/teams"
-repository = "https://github.com/agritheory/teams"
-source = "https://github.com/agritheory/teams"
-changelog = "https://github.com/agritheory/teams/CHANGELOG.md"
-documentation = "https://github.com/agritheory/teams/tree/version-15/docs"
-issues = "https://github.com/agritheory/teams/issues"
+homepage = "https://github.com/agritheory/communications"
+repository = "https://github.com/agritheory/communications"
+source = "https://github.com/agritheory/communications"
+changelog = "https://github.com/agritheory/communications/CHANGELOG.md"
+documentation = "https://github.com/agritheory/communications/tree/version-15/docs"
+issues = "https://github.com/agritheory/communications/issues"
 
 
 [build-system]
@@ -36,7 +36,7 @@ pytest-order = "^1.2.1"
 test_utils = { git = "https://github.com/agritheory/test_utils.git" }
 
 [tool.pytest.ini_options]
-addopts = "--cov=teams --cov-report term-missing"
+addopts = "--cov=communications --cov-report term-missing"
 
 [tool.black]
 line-length = 99
@@ -79,7 +79,7 @@ exclude_also = [
 [tool.semantic_release]
 version_toml = ["pyproject.toml:tool.poetry.version"]
 version_variables = [
-    "teams/__init__.py:__version__"
+    "communications/__init__.py:__version__"
 ]
 build_command = "echo 1"
 

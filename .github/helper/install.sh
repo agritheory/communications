@@ -41,9 +41,9 @@ sed -i 's/socketio:/# socketio:/g' Procfile
 sed -i 's/redis_socketio:/# redis_socketio:/g' Procfile
 
 bench get-app erpnext https://github.com/frappe/erpnext --branch ${BRANCH_NAME} --resolve-deps --skip-assets
-bench get-app teams "${GITHUB_WORKSPACE}" --skip-assets
+bench get-app communications "${GITHUB_WORKSPACE}" --skip-assets
 
-printf '%s\n' 'frappe' 'erpnext' 'teams' > ~/frappe-bench/sites/apps.txt
+printf '%s\n' 'frappe' 'erpnext' 'communications' > ~/frappe-bench/sites/apps.txt
 bench setup requirements --python
 bench use test_site
 
@@ -58,4 +58,4 @@ bench list-apps
 
 bench start &> bench_run_logs.txt &
 CI=Yes &
-bench execute 'teams.tests.setup.before_test'
+bench execute 'communications.tests.setup.before_test'

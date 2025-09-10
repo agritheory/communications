@@ -12,7 +12,7 @@ from frappe.utils.jinja import validate_template
 from frappe.utils import get_url_to_form
 
 
-class TeamsNotification(Notification):
+class CommunicationsNotification(Notification):
 	# track overrides
 	def validate(self):
 		if self.channel in ("Email", "Slack", "Slack DM", "Teams DM", "System Notification"):

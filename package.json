@@ -1,7 +1,7 @@
 {
-	"name": "@agritheory/teams",
+	"name": "@agritheory/communications",
 	"version": "1.0.0",
-	"description": "MS Teams integration",
+	"description": "Messaging and telephony extensions for Frappe",
 	"type": "module",
 	"scripts": {
 		"test": "vitest",

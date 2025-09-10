@@ -262,10 +262,10 @@ export class PhoneField {
 
 		const d = new frappe.ui.Dialog({
 			title: __('Call with Teams', null, ''),
-			primary_action_label: __('Call with Teams', null, 'Call with Teams'),
+			primary_action_label: __('Call with communications', null, 'Call with communications'),
 			primary_action: () => {
 				frappe.call({
-					method: 'teams.teams.start_teams_call',
+					method: 'communications.communications.start_communications_call',
 					args: {
 						phone_number: callNumber,
 						doctype: this.doctype,
@@ -281,7 +281,7 @@ export class PhoneField {
 			},
 		})
 
-		d.$body.append(`<p class="frappe-confirm-message">Call ${displayValue} with Teams</p>`)
+		d.$body.append(`<p class="frappe-confirm-message">Call ${displayValue} with communications</p>`)
 		d.show()
 		d.confirm_dialog = true
 	}

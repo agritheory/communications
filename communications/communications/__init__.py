@@ -7,7 +7,7 @@ import frappe
 
 
 @frappe.whitelist()
-def start_teams_call(phone_number, doctype, docname):
+def start_phone_call(phone_number, doctype, docname):
 	print("starting call with", phone_number, doctype, docname)
 
 
