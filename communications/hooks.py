@@ -135,7 +135,7 @@ app_include_js = [
 # Override standard doctype classes
 
 override_doctype_class = {
-	"Notification": "communications.communications.overrides.notification.communicationsNotification",
+	"Notification": "communications.communications.overrides.notification.CommunicationsNotification",
 }
 
 # Document Events
