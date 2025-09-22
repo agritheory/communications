@@ -63,8 +63,8 @@ repos:
       - id: validate_copyright
         files: '\.(js|ts|py|md)$'
         args: ['--app', 'communications']
-      - id: clean_customized_doctypes
-        args: ['--app', 'communications']
+      # - id: clean_customized_doctypes
+      #   args: ['--app', 'communications']
       - id: validate_customizations
 
   - repo: local
