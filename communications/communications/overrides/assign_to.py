@@ -7,6 +7,12 @@ from frappe.desk.doctype.notification_log.notification_log import (
 )
 
 
+def send_notification_for_doc(notification_name, doc_type, doc_name):
+	notification = frappe.get_doc("Notification", notification_name)
+	doc = frappe.get_doc(doc_type, doc_name)
+	notification.send(doc)
+
+
 def custom_notify_assignment(
 	assigned_by, allocated_to, doc_type, doc_name, action="CLOSE", description=None
 ):
@@ -29,8 +35,12 @@ def custom_notify_assignment(
 	if notification_name:
 		notification_name = notification_name[0]
 		try:
-			notification = frappe.get_doc("Notification", notification_name)
-			notification.send(doc=frappe.get_doc(doc_type, doc_name))
+			frappe.enqueue(
+				"communications.communications.overrides.assign_to.send_notification_for_doc",
+				notification_name=notification_name,
+				doc_type=doc_type,
+				doc_name=doc_name,
+			)
 			return
 		except Exception as e:
 			frappe.log_error(
