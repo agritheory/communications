@@ -23,9 +23,11 @@ def custom_notify_assignment(
 		return
 
 	# Check if a Notification is configured for ToDo
-	notification_name = frappe.db.get_value("Notification", {"document_type": "ToDo", "enabled": 1})
-
+	notification_name = frappe.get_all(
+		"Notification", {"document_type": "ToDo", "enabled": 1}, order_by="modified desc", pluck="name"
+	)
 	if notification_name:
+		notification_name = notification_name[0]
 		try:
 			notification = frappe.get_doc("Notification", notification_name)
 			notification.send(doc=frappe.get_doc(doc_type, doc_name))
