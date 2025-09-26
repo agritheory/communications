@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v15.1.0 (2025-09-26)
+
+### Bug Fixes
+
+- Enqueue
+  ([`7b12d23`](https://github.com/agritheory/communications/commit/7b12d23e041d62ce67173d25281d4b1ffb115952))
+
+- Last modified notification
+  ([`90b22e4`](https://github.com/agritheory/communications/commit/90b22e45103f3ac3680e26e19248cff49aa88abc))
+
+### Features
+
+- Allow configured Notification to be used instead of only email for notify_assignment
+  ([`9c251e6`](https://github.com/agritheory/communications/commit/9c251e681c80c2a8044ec523c8f75a256b2b9543))
+
+
 ## v15.0.1 (2025-09-15)
 
 ### Bug Fixes
