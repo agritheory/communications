@@ -1,0 +1,135 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-01-02 12:00:00",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"enabled",
+		"collection_window_minutes",
+		"column_break_3",
+		"max_digest_size",
+		"section_break_5",
+		"delivery_start_hour",
+		"delivery_end_hour",
+		"time_zone",
+		"column_break_9",
+		"bypass_batching_for_priority",
+		"priority_doctypes",
+		"section_break_12",
+		"batch_template",
+		"column_break_rwqb",
+		"individual_template"
+	],
+	"fields": [
+		{
+			"default": "1",
+			"fieldname": "enabled",
+			"fieldtype": "Check",
+			"label": "Enable Notification Batching"
+		},
+		{
+			"default": "15",
+			"description": "Time to collect notifications before dispatching",
+			"fieldname": "collection_window_minutes",
+			"fieldtype": "Int",
+			"label": "Collection Window (Minutes)"
+		},
+		{
+			"fieldname": "column_break_3",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "50",
+			"description": "Maximum assignments in single digest",
+			"fieldname": "max_digest_size",
+			"fieldtype": "Int",
+			"label": "Max Digest Size"
+		},
+		{
+			"fieldname": "section_break_5",
+			"fieldtype": "Section Break",
+			"label": "Delivery Hours"
+		},
+		{
+			"default": "8",
+			"fieldname": "delivery_start_hour",
+			"fieldtype": "Int",
+			"label": "Start Hour (24h format)"
+		},
+		{
+			"default": "20",
+			"fieldname": "delivery_end_hour",
+			"fieldtype": "Int",
+			"label": "End Hour (24h format)"
+		},
+		{
+			"default": "UTC",
+			"fieldname": "time_zone",
+			"fieldtype": "Autocomplete",
+			"label": "Timezone"
+		},
+		{
+			"fieldname": "column_break_9",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "0",
+			"fieldname": "bypass_batching_for_priority",
+			"fieldtype": "Check",
+			"label": "Bypass Batching for Priority Items"
+		},
+		{
+			"depends_on": "bypass_batching_for_priority",
+			"fieldname": "priority_doctypes",
+			"fieldtype": "Small Text",
+			"label": "Priority DocTypes (comma separated)"
+		},
+		{
+			"fieldname": "section_break_12",
+			"fieldtype": "Section Break",
+			"label": "Email Templates"
+		},
+		{
+			"fieldname": "batch_template",
+			"fieldtype": "Link",
+			"label": "Batch Notification Template",
+			"options": "Email Template"
+		},
+		{
+			"fieldname": "individual_template",
+			"fieldtype": "Link",
+			"label": "Individual Notification Template",
+			"options": "Email Template"
+		},
+		{
+			"fieldname": "column_break_rwqb",
+			"fieldtype": "Column Break"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2025-10-14 03:43:03.540456",
+	"modified_by": "Administrator",
+	"module": "Communications",
+	"name": "Notification Window Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"print": 1,
+			"read": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"row_format": "Dynamic",
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"track_changes": 1
+}

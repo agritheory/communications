@@ -143,33 +143,22 @@ override_doctype_class = {
 # Hook on document methods and events
 
 # doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
+#     "ToDo": {
+#         "after_insert": "communications.communications.overrides.assignment.on_todo_insert"
+#     }
 # }
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"communications.tasks.all"
-# 	],
-# 	"daily": [
-# 		"communications.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"communications.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"communications.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"communications.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"cron": {
+		"* * * * *": [
+			"communications.notification_scheduler.background_jobs.process_notification_windows"
+		]
+	},
+	"daily": ["communications.notification_scheduler.background_jobs.cleanup_old_queue_entries"],
+}
 
 # Testing
 # -------
@@ -179,9 +168,9 @@ override_doctype_class = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "communications.event.get_events"
-# }
+override_whitelisted_methods = {
+	"frappe.desk.form.assign_to.add": "communications.communications.overrides.assignment.add"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
