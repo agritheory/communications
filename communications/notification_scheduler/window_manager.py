@@ -89,7 +89,9 @@ class WindowManager:
 			for full_key in cache.get_keys(f"{WindowManager.REDIS_KEY_PREFIX}:*") or []:
 				try:
 					key = full_key.decode("utf-8") if isinstance(full_key, bytes) else full_key
-					data = cache.get_value(key.split("|", 1)[1])
+					if "|" in key:
+						key = key.split("|", 1)[1]
+					data = cache.get_value(key)
 					if not data:
 						continue
 

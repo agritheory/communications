@@ -4,6 +4,7 @@
 import frappe
 from frappe.utils import today
 from communications.communications.overrides.assignment import add as assign_user
+from communications.notification_scheduler.window_manager import WindowManager
 
 
 def test_notification_scheduler_disabled():
@@ -11,7 +12,7 @@ def test_notification_scheduler_disabled():
 	config.enabled = 0
 	config.save()
 
-	supplier = frappe.get_all("Supplier", limit=1, pluck="name")[1]
+	supplier = frappe.get_all("Supplier", limit=1, pluck="name")[0]
 	assign_user(
 		{
 			"doctype": "Supplier",
@@ -46,6 +47,7 @@ def test_notification_scheduler_enabled():
 	assert str(queue_entry.assignment_date.date()) == today()
 	assert queue_entry.window_key is not None
 
+	WindowManager.get_window_data(user) 
 
 def test_priority_doctype_bypasses_batching():
 	config = frappe.get_single("Notification Window Settings")
