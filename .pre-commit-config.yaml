@@ -66,6 +66,7 @@ repos:
       - id: clean_customized_doctypes
         args: ['--app', 'communications']
       - id: validate_customizations
+      - id: bylines
 
   - repo: local
     hooks:
