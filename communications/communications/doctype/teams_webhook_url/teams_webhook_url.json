@@ -8,10 +8,14 @@
 		"webhook_settings_column",
 		"webhook_name",
 		"webhook_url",
-		"column_break_ghmx",
-		"client_id",
+		"tenant_domain",
+		"use_bot_framework",
+		"column_break_nhdu",
+		"bot_app_id",
 		"tenant_id",
-		"client_secret"
+		"bot_app_secret",
+		"show_document_link",
+		"service_url"
 	],
 	"fields": [
 		{
@@ -28,14 +32,10 @@
 			"label": "Webhook URL"
 		},
 		{
-			"fieldname": "column_break_ghmx",
-			"fieldtype": "Column Break",
-			"label": "Graph Settings"
-		},
-		{
-			"fieldname": "client_id",
-			"fieldtype": "Data",
-			"label": "Client ID"
+			"default": "1",
+			"fieldname": "show_document_link",
+			"fieldtype": "Check",
+			"label": "Show link to document"
 		},
 		{
 			"fieldname": "tenant_id",
@@ -43,20 +43,45 @@
 			"label": "Tenant ID"
 		},
 		{
-			"fieldname": "client_secret",
-			"fieldtype": "Password",
-			"label": "Client Secret"
-		},
-		{
 			"fieldname": "webhook_settings_column",
 			"fieldtype": "Column Break",
 			"label": "Webhook Settings"
+		},
+		{
+			"fieldname": "tenant_domain",
+			"fieldtype": "Data",
+			"label": "Tenant Domain"
+		},
+		{
+			"default": "1",
+			"fieldname": "use_bot_framework",
+			"fieldtype": "Check",
+			"label": "Use Bot Framework"
+		},
+		{
+			"fieldname": "column_break_nhdu",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "bot_app_id",
+			"fieldtype": "Data",
+			"label": "Bot App ID"
+		},
+		{
+			"fieldname": "bot_app_secret",
+			"fieldtype": "Password",
+			"label": "Bot App Secret"
+		},
+		{
+			"fieldname": "service_url",
+			"fieldtype": "Data",
+			"label": "Service URL"
 		}
 	],
 	"grid_page_length": 50,
 	"index_web_pages_for_search": 1,
 	"links": [],
-	"modified": "2025-08-27 09:24:35.136698",
+	"modified": "2025-11-26 13:22:57.644888",
 	"modified_by": "Administrator",
 	"module": "Communications",
 	"name": "Teams Webhook URL",
