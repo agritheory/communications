@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v15.1.1 (2025-12-19)
+
+### Bug Fixes
+
+- Add slack dependency
+  ([`6fe434f`](https://github.com/agritheory/communications/commit/6fe434f01c3078dbbca1d6b579c219a68ec949fc))
+
+
 ## v15.1.0 (2025-09-26)
 
 ### Bug Fixes
