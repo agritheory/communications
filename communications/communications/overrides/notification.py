@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import json
+import requests
 
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -105,6 +106,9 @@ class CommunicationsNotification(Notification):
 			return None
 
 	def send_a_slack_dm_msg(self, doc, context):
+		if frappe.are_emails_muted():
+			return
+
 		recipients, cc, bcc = self.get_list_of_recipients(doc, context)
 
 		if not (recipients or cc or bcc):
@@ -146,8 +150,6 @@ class CommunicationsNotification(Notification):
 
 	def send_a_teams_dm_msg(self, doc, context):
 		"""Send a direct message via Microsoft Teams."""
-		import requests
-
 		recipients, cc, bcc = self.get_list_of_recipients(doc, context)
 
 		if not (recipients or cc or bcc):
