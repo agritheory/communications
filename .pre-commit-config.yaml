@@ -67,6 +67,7 @@ repos:
         args: ['--app', 'communications']
       - id: validate_customizations
       - id: bylines
+        exclude: ^README\.md$
 
   - repo: local
     hooks:
