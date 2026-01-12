@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v15.2.0 (2025-12-19)
+
+### Features
+
+- Make Slack integration respect the "mute_emails" site config
+  ([`d528187`](https://github.com/agritheory/communications/commit/d528187845520ca138ade12d0bb8a31e1c3edbd0))
+
+
+## v15.1.1 (2025-12-19)
+
+### Bug Fixes
+
+- Add slack dependency
+  ([`6fe434f`](https://github.com/agritheory/communications/commit/6fe434f01c3078dbbca1d6b579c219a68ec949fc))
+
+
 ## v15.1.0 (2025-09-26)
 
 ### Bug Fixes
