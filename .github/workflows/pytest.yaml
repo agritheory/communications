@@ -6,9 +6,9 @@ permissions:
 
 on:
   push:
-    branches: [ version-15 ]
+    branches: [version-14, version-15]
   pull_request:
-    branches: [ version-15 ]
+    branches: [version-14, version-15]
 
 env:
     BRANCH_NAME: ${{ github.base_ref || github.ref_name }}
