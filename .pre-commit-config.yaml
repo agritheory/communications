@@ -4,22 +4,31 @@ fail_fast: false
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         files: 'communications.*'
         exclude: '.*json$|.*txt$|.*csv|.*md|.*svg'
       - id: check-yaml
       - id: no-commit-to-branch
-        args: ['--branch', 'version-15']
+        args: ['--branch', 'version-15', '--branch', 'version-16']
       - id: check-merge-conflict
       - id: check-ast
       - id: check-json
       - id: check-toml
       - id: debug-statements
 
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        args: ["--ignore-words-list", "notin"]
+        exclude: 'yarn.lock|poetry.lock'
+        additional_dependencies:
+          - tomli
+
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.17.0
+    rev: v3.19.1
     hooks:
       - id: pyupgrade
         args: ['--py310-plus']
@@ -29,52 +38,43 @@ repos:
     hooks:
       - id: black
 
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.3.1
-    hooks:
-      - id: autoflake
-        args: [--remove-all-unused-imports, --in-place]
-
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
+    rev: 7.2.0
     hooks:
       - id: flake8
         additional_dependencies: ['flake8-bugbear']
 
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
-    hooks:
-      - id: codespell
-        additional_dependencies:
-          - tomli
-        exclude: >
-          (?x)^(
-            .*\.lock|
-            .*\.pyc|
-            \.tox
-            \.mypy_cache
-          )$
-
   - repo: https://github.com/agritheory/test_utils
-    rev: v1.7.1
+    rev: v1.18.0
     hooks:
       - id: update_pre_commit_config
-      - id: mypy
+      - id: validate_frappe_project
       - id: validate_copyright
         files: '\.(js|ts|py|md)$'
         args: ['--app', 'communications']
+      - id: bylines
+        exclude: 'README.md|CHANGELOG.md'
       - id: clean_customized_doctypes
         args: ['--app', 'communications']
       - id: validate_customizations
-      - id: bylines
-        exclude: ^README\.md$
+      - id: validate_patches
+        args: ['--app', 'communications']
+      - id: track_overrides
+        args: ['--directory', '.', '--app', 'communications', '--base-branch', 'version-15']
+      - id: check_code_duplication
+        args: ['--max-clones', '60', '--max-percentage', '5.0']
 
-  - repo: local
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
     hooks:
       - id: prettier
-        name: prettier
-        entry: npx prettier -w . --config .prettierrc.cjs --ignore-path .prettierignore
-        language: system
+        types_or: [javascript, vue, scss]
+        exclude: |
+          (?x)^(
+            .*node_modules.*|
+            communications/public/dist/.*|
+            communications/public/js/lib/.*
+          )$
 
 ci:
   autoupdate_schedule: weekly

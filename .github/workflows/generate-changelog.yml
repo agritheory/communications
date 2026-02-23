@@ -1,10 +1,6 @@
 name: Generate Changelog
 
 on:
-  workflow_run:
-    workflows: [Run Linters]
-    types:
-      - completed
   pull_request:
     types: [opened, reopened, synchronize]
   issue_comment:
@@ -25,5 +21,3 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # Optional: Use custom prompt template
-          # prompt-template: '.github/changelog-prompt.txt'

@@ -1,9 +1,14 @@
 name: Linters
+
 on:
   push:
-    branches: [ version-15 ]
+    branches:
+      - version-14
+      - version-15
   pull_request:
-    branches: [ version-15 ]
+    branches:
+      - version-14
+      - version-15
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -44,10 +49,10 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Black (Frappe / AgriTheory)
+      - name: Install Black (AgriTheory)
         run: pip install git+https://github.com/agritheory/black.git
 
-      - name: Run Black (Frappe / AgriTheory)
+      - name: Run Black
         run: black --check .
 
   prettier:
@@ -59,7 +64,7 @@ jobs:
       - name: Prettify code
         uses: rutajdash/prettier-cli-action@v1.0.0
         with:
-          config_path: ./.prettierrc.js
+          config_path: ./.prettierrc.cjs
           ignore_path: ./.prettierignore
 
       - name: Prettier Output
@@ -67,4 +72,4 @@ jobs:
         shell: bash
         run: |
           echo "The following files are not formatted:"
-          echo "${{steps.prettier-run.outputs.prettier_output}}" >> $GITHUB_OUTPUT
+          echo "${{ steps.prettier-run.outputs.prettier_output }}" >> $GITHUB_OUTPUT
