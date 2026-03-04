@@ -32,10 +32,11 @@ app_license = "mit"
 app_include_js = [
 	"communications.bundle.js",
 ]
+app_include_css = ["/assets/communications/css/public_calendar.css"]
 
 # include js, css files in header of web template
-# web_include_css = "/assets/communications/css/communications.css"
-# web_include_js = "/assets/communications/js/communications.js"
+web_include_css = "/assets/communications/css/public_calendar.css"
+web_include_js = "public_calendar.bundle.js"
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "communications/public/scss/website"
@@ -79,16 +80,19 @@ app_include_js = [
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "communications.utils.jinja_methods",
-# 	"filters": "communications.utils.jinja_filters"
-# }
+jinja = {
+	"methods": [
+		"communications.communications.notifications.rsvp_confirm_url",
+		"communications.communications.notifications.rsvp_decline_url",
+		"communications.communications.notifications.rsvp_cancel_url",
+	],
+}
 
 # Installation
 # ------------
 
 # before_install = "communications.install.before_install"
-# after_install = "communications.install.after_install"
+after_install = "communications.communications.install.after_install"
 
 # Uninstallation
 # ------------
@@ -142,34 +146,20 @@ override_doctype_class = {
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Event": {
+		"validate": "communications.communications.overrides.event.validate",
+		"on_update": "communications.communications.overrides.event.on_update",
+		"on_trash": "communications.communications.overrides.event.on_trash",
+	}
+}
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"communications.tasks.all"
-# 	],
-# 	"daily": [
-# 		"communications.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"communications.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"communications.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"communications.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"hourly": ["communications.communications.notifications.send_appointment_reminders"],
+}
 
 # Testing
 # -------
