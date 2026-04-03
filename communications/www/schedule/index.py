@@ -1,16 +1,25 @@
 # Copyright (c) 2025, AgriTheory and contributors
 # For license information, please see license.txt
 
+import os
+
+import pytz
+
 import frappe
 from frappe import _
 from frappe.query_builder import DocType
 from frappe.query_builder.functions import Coalesce
-from frappe.utils import get_system_timezone
+from frappe.utils import get_datetime, get_system_timezone
 
 from communications.communications.notifications import notify_booking
 
 
 def get_context(context):
+	# Schedule booking is for authenticated users only. Guests should not see
+	# calendar availability or booking UI and should receive a 404-style response.
+	if frappe.session.user == "Guest":
+		raise frappe.PageDoesNotExistError()
+
 	route = frappe.form_dict.get("name")
 
 	schedulable = frappe.get_all(
@@ -46,7 +55,9 @@ def get_context(context):
 		context.parents = [{"name": _("Home"), "route": "/"}]
 
 	context.schedulable_calendars = schedulable
-	context.timezone = get_system_timezone()
+	context.timezone = _get_user_timezone()
+	js_path = frappe.get_app_path("communications", "public", "js", "public_calendar.js")
+	context.js_mtime = int(os.path.getmtime(js_path)) if os.path.exists(js_path) else 0
 	context.no_cache = 1
 
 
@@ -55,6 +66,7 @@ def get_events(start: str, end: str, public_calendar: str):
 	Event = DocType("Event")
 	EventParticipant = DocType("Event Participants")
 	PublicCalendar = DocType("Public Calendar")
+	start_dt, end_dt = _convert_user_date_range_to_system(start, end)
 
 	query = (
 		frappe.qb.from_(Event)
@@ -73,8 +85,8 @@ def get_events(start: str, end: str, public_calendar: str):
 			PublicCalendar.busy_text,
 		)
 		.where(
-			(Event.starts_on <= end)
-			& (Coalesce(Event.ends_on, Event.starts_on) >= start)
+			(Event.starts_on <= end_dt)
+			& (Coalesce(Event.ends_on, Event.starts_on) >= start_dt)
 			& (PublicCalendar.allow_booking == 1)
 			& (PublicCalendar.name == public_calendar)
 			& (Event.status != "Cancelled")
@@ -94,6 +106,8 @@ def book_appointment(
 	description: str = "",
 ):
 	calendar = frappe.get_doc("Public Calendar", public_calendar)
+	starts_on_system = _convert_user_datetime_to_system(starts_on)
+	ends_on_system = _convert_user_datetime_to_system(ends_on)
 
 	if not calendar.allow_booking:
 		frappe.throw(_("Booking is not enabled for this calendar"))
@@ -103,8 +117,8 @@ def book_appointment(
 			"doctype": "Event",
 			"subject": subject,
 			"description": description,
-			"starts_on": starts_on,
-			"ends_on": ends_on,
+			"starts_on": starts_on_system,
+			"ends_on": ends_on_system,
 			"event_type": "Public",
 			"reference_doctype": "Public Calendar",
 			"reference_docname": public_calendar,
@@ -147,6 +161,33 @@ def book_appointment(
 	return event.name
 
 
+@frappe.whitelist()
+def get_available_timezones() -> list[str]:
+	"""Return all valid IANA timezone strings for the timezone picker."""
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Please login to continue"), frappe.PermissionError)
+
+	from frappe.core.doctype.user.user import get_timezones
+
+	return get_timezones().get("timezones", [])
+
+
+@frappe.whitelist()
+def update_my_timezone(timezone: str) -> dict:
+	"""Persist the current user's timezone preference."""
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Please login to continue"), frappe.PermissionError)
+
+	timezones = get_available_timezones()
+	if timezone not in timezones:
+		frappe.throw(_("Please choose a valid timezone."), frappe.ValidationError)
+
+	frappe.db.set_value("User", frappe.session.user, "time_zone", timezone)
+	frappe.defaults.set_default("time_zone", timezone, frappe.session.user)
+	frappe.db.commit()
+	return {"timezone": timezone}
+
+
 def get_contact_links(email: str) -> list[dict]:
 	"""
 	Get linked parties (Customer, Supplier, Lead, etc.) for a Contact by email.
@@ -174,3 +215,37 @@ def get_contact_links(email: str) -> list[dict]:
 	)
 
 	return links
+
+
+def _get_user_timezone() -> str:
+	"""Use current user's timezone when available, else system timezone."""
+	if frappe.session.user and frappe.session.user != "Guest":
+		return frappe.db.get_value("User", frappe.session.user, "time_zone") or get_system_timezone()
+	return get_system_timezone()
+
+
+def _convert_user_date_range_to_system(start_date: str, end_date: str) -> tuple:
+	"""Convert user-local date boundaries to naive system-time datetimes."""
+	user_tz = pytz.timezone(_get_user_timezone())
+	system_tz = pytz.timezone(get_system_timezone())
+
+	start_local = user_tz.localize(get_datetime(f"{start_date} 00:00:00"))
+	end_local = user_tz.localize(get_datetime(f"{end_date} 23:59:59"))
+
+	start_system = start_local.astimezone(system_tz).replace(tzinfo=None)
+	end_system = end_local.astimezone(system_tz).replace(tzinfo=None)
+	return start_system, end_system
+
+
+def _convert_user_datetime_to_system(dt_str: str):
+	"""Convert a user-local datetime string to naive system-time datetime."""
+	user_tz = pytz.timezone(_get_user_timezone())
+	system_tz = pytz.timezone(get_system_timezone())
+
+	dt = get_datetime(dt_str)
+	if dt.tzinfo is None:
+		dt = user_tz.localize(dt)
+	else:
+		dt = dt.astimezone(user_tz)
+
+	return dt.astimezone(system_tz).replace(tzinfo=None)

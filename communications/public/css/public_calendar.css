@@ -292,6 +292,34 @@
 	background: #fef9c3 !important;
 }
 
+/* Keep slot selection feedback subtle (avoid dark full-row overlays). */
+.public-calendar .fc-highlight {
+	background: rgba(74, 139, 111, 0.08) !important;
+	opacity: 1 !important;
+}
+
+/* Guard against global table-hover styles and helper overlays leaking into
+   week/day slot grids, which can look like disabled dark bands. */
+.public-calendar .fc-time-grid table tr:hover td,
+.public-calendar .fc-time-grid table td:hover,
+.public-calendar .fc-time-grid .fc-slats tr:hover td,
+.public-calendar .fc-time-grid .fc-slats td:hover,
+.public-calendar .fc-time-grid .fc-helper-skeleton td,
+.public-calendar .fc-time-grid .fc-helper-skeleton tr:hover td {
+	background-color: transparent !important;
+}
+
+/* FullCalendar can render dark helper/nonbusiness overlays in the time grid
+   (z-index layers above slats). Neutralize those so hover/drag never looks
+   like a disabled full-width block. */
+.public-calendar .fc-time-grid .fc-helper-skeleton,
+.public-calendar .fc-time-grid .fc-highlight-skeleton,
+.public-calendar .fc-time-grid .fc-bgevent-skeleton,
+.public-calendar .fc-time-grid .fc-nonbusiness {
+	background: transparent !important;
+	opacity: 0 !important;
+}
+
 .calendar-title {
 	margin: 0;
 	margin-bottom: 0.5rem;
@@ -305,4 +333,10 @@
 
 .calendar-timezone-label {
 	font-size: 0.875rem;
+}
+
+.calendar-timezone-link {
+	margin-left: 0.5rem;
+	font-size: 0.875rem;
+	text-decoration: underline;
 }

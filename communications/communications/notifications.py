@@ -19,6 +19,7 @@ import hmac
 from typing import Literal
 
 import frappe
+from frappe.exceptions import OutgoingEmailError
 from frappe.query_builder import DocType
 from frappe.utils import add_to_date, format_datetime, get_datetime, get_url, now_datetime
 
@@ -235,15 +236,25 @@ def _send_notification(
 		subject = frappe.render_template(notification.subject, context)
 		message = frappe.render_template(notification.message, context)
 
-		frappe.sendmail(
-			recipients=[recipient],
-			subject=subject,
-			message=message,
-			attachments=attachments,
-			reference_doctype="Event",
-			reference_name=event.name,
-			now=True,
-		)
+		try:
+			frappe.sendmail(
+				recipients=[recipient],
+				subject=subject,
+				message=message,
+				attachments=attachments,
+				reference_doctype="Event",
+				reference_name=event.name,
+				now=True,
+			)
+		except OutgoingEmailError:
+			# Booking/reschedule/cancel flows should still complete when email is not configured.
+			frappe.log_error(
+				message=(
+					f"Skipping email notification '{notification_name}' for Event {event.name}: "
+					"no outgoing Email Account configured."
+				),
+				title="Public Calendar Notification Skipped",
+			)
 	else:
 		# For other channels, use the Notification's send method
 		# Temporarily inject our context into the doc for template rendering

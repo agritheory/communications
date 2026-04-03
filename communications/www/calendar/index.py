@@ -4,7 +4,8 @@
 import frappe
 from frappe.query_builder import DocType
 from frappe.query_builder.functions import Coalesce
-from frappe.utils import get_system_timezone
+from frappe.utils import get_datetime, get_system_timezone
+import os
 
 
 def get_context(context):
@@ -28,7 +29,9 @@ def get_context(context):
 		context.selected_calendar = None
 
 	context.public_calendars = public_calendars
-	context.timezone = get_system_timezone()
+	context.timezone = _get_user_timezone()
+	js_path = frappe.get_app_path("communications", "public", "js", "public_calendar.js")
+	context.js_mtime = int(os.path.getmtime(js_path)) if os.path.exists(js_path) else 0
 	context.no_cache = 1
 
 
@@ -37,6 +40,7 @@ def get_events(start: str, end: str, public_calendar: str | None = None):
 	Event = DocType("Event")
 	EventParticipant = DocType("Event Participants")
 	PublicCalendar = DocType("Public Calendar")
+	start_dt, end_dt = _convert_user_date_range_to_system(start, end)
 
 	query = (
 		frappe.qb.from_(Event)
@@ -57,8 +61,8 @@ def get_events(start: str, end: str, public_calendar: str | None = None):
 			PublicCalendar.title.as_("calendar_title"),
 		)
 		.where(
-			(Event.starts_on <= end)
-			& (Coalesce(Event.ends_on, Event.starts_on) >= start)
+			(Event.starts_on <= end_dt)
+			& (Coalesce(Event.ends_on, Event.starts_on) >= start_dt)
 			& (PublicCalendar.is_public == 1)
 			& (Event.status != "Cancelled")
 		)
@@ -69,3 +73,25 @@ def get_events(start: str, end: str, public_calendar: str | None = None):
 		query = query.where(PublicCalendar.name == public_calendar)
 
 	return query.run(as_dict=True)
+
+
+def _get_user_timezone() -> str:
+	"""Use current user's timezone when available, else system timezone."""
+	if frappe.session.user and frappe.session.user != "Guest":
+		return frappe.db.get_value("User", frappe.session.user, "time_zone") or get_system_timezone()
+	return get_system_timezone()
+
+
+def _convert_user_date_range_to_system(start_date: str, end_date: str) -> tuple:
+	"""Convert user-local date boundaries to naive system-time datetimes."""
+	import pytz
+
+	user_tz = pytz.timezone(_get_user_timezone())
+	system_tz = pytz.timezone(get_system_timezone())
+
+	start_local = user_tz.localize(get_datetime(f"{start_date} 00:00:00"))
+	end_local = user_tz.localize(get_datetime(f"{end_date} 23:59:59"))
+
+	start_system = start_local.astimezone(system_tz).replace(tzinfo=None)
+	end_system = end_local.astimezone(system_tz).replace(tzinfo=None)
+	return start_system, end_system

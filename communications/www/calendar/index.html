@@ -16,15 +16,19 @@
 			</option>
 			{% endfor %}
 		</select>
-		<span class="calendar-timezone-label text-muted" style="margin-left: 1rem;">{{ timezone }}</span>
+		<span class="calendar-timezone-label text-muted" style="margin-left: 1rem;">
+			{{ _("Times shown in") }} <strong>{{ timezone }}</strong>
+			<a href="#" id="change-timezone-link" class="calendar-timezone-link">{{ _("Change my Time Zone") }}</a>
+		</span>
 	</div>
 	<div id="public-calendar-wrapper" data-calendar="{{ selected_calendar or '' }}"
-		data-method="communications.communications.www.calendar.index.get_events">
+		data-method="communications.www.calendar.index.get_events" data-timezone="{{ timezone }}">
 	</div>
 </div>
 {% endblock %}
 
 {% block script %}
+<script src="/assets/communications/js/public_calendar.js?v={{ js_mtime }}"></script>
 <script>
 	frappe.ready(() => public_calendar.init())
 </script>

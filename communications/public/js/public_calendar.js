@@ -8,7 +8,7 @@ public_calendar.Calendar = class Calendar {
 		this.wrapper = wrapper
 		this.options = options
 		this.public_calendar = options.public_calendar || null
-		this.method = options.method || 'communications.communications.www.calendar.index.get_events'
+		this.method = options.method || 'communications.www.calendar.index.get_events'
 		this.mode = options.mode || 'calendar'
 		this.slot_duration = options.slot_duration || 30
 		this.max_meeting_duration = options.max_meeting_duration || this.slot_duration
@@ -16,6 +16,7 @@ public_calendar.Calendar = class Calendar {
 		this.min_notice_hours = options.min_notice_hours || 0
 		this.max_advance_days = options.max_advance_days || 30
 		this.working_hours = options.working_hours || {}
+		this.timezone = options.timezone || null
 		this.events_cache = []
 		this.init()
 	}
@@ -25,6 +26,7 @@ public_calendar.Calendar = class Calendar {
 		this.calculate_time_bounds()
 		this.setup_calendar()
 		this.bind_selector()
+		this.bind_timezone_controls()
 	}
 
 	async load_libs() {
@@ -70,6 +72,7 @@ public_calendar.Calendar = class Calendar {
 
 		const cal_options = {
 			locale: frappe.boot.lang,
+			timezone: this.timezone || 'local',
 			header: {
 				left: 'prev,title,next',
 				center: '',
@@ -79,7 +82,9 @@ public_calendar.Calendar = class Calendar {
 			editable: false,
 			selectable: this.mode === 'schedule',
 			selectOverlap: false,
-			selectHelper: true,
+			// Avoid the large drag helper overlay in week/day views; we'll still
+			// process slot selection normally via the select callback.
+			selectHelper: false,
 			minTime: this.minTime,
 			maxTime: this.maxTime,
 			contentHeight: 'auto',
@@ -99,7 +104,7 @@ public_calendar.Calendar = class Calendar {
 		if (this.mode === 'schedule') {
 			cal_options.select = (start, end, jsEvent, view) => {
 				// Enforce slot duration
-				const enforced_end = moment(start).add(this.slot_duration, 'minutes')
+				const enforced_end = this.toTzMoment(start).add(this.slot_duration, 'minutes')
 
 				// Validate slot before showing dialog
 				if (!this.is_slot_allowed({ start: start })) {
@@ -114,8 +119,8 @@ public_calendar.Calendar = class Calendar {
 			cal_options.slotDuration = this.format_duration(this.slot_duration)
 			cal_options.selectAllow = selectInfo => this.is_slot_allowed(selectInfo)
 			cal_options.selectConstraint = {
-				start: moment().add(this.min_notice_hours, 'hours').format(),
-				end: moment().add(this.max_advance_days, 'days').format(),
+				start: this.getNow().add(this.min_notice_hours, 'hours').format(),
+				end: this.getNow().add(this.max_advance_days, 'days').format(),
 			}
 		}
 
@@ -147,18 +152,19 @@ public_calendar.Calendar = class Calendar {
 	}
 
 	is_slot_allowed(selectInfo) {
-		const start = moment(selectInfo.start)
+		const start = this.toTzMoment(selectInfo.start)
 		const end = moment(start).add(this.slot_duration, 'minutes')
+		const now = this.getNow()
 
 		// Check if in the past
-		if (start.isBefore(moment())) {
+		if (start.isBefore(now)) {
 			console.log('Blocked: in the past')
 			return false
 		}
 
 		// Check min notice hours
 		if (this.min_notice_hours > 0) {
-			const earliest_allowed = moment().add(this.min_notice_hours, 'hours')
+			const earliest_allowed = now.clone().add(this.min_notice_hours, 'hours')
 			if (start.isBefore(earliest_allowed)) {
 				console.log('Blocked: min notice hours')
 				return false
@@ -167,7 +173,7 @@ public_calendar.Calendar = class Calendar {
 
 		// Check max advance days
 		if (this.max_advance_days > 0) {
-			const latest_allowed = moment().add(this.max_advance_days, 'days')
+			const latest_allowed = now.clone().add(this.max_advance_days, 'days')
 			if (start.isAfter(latest_allowed)) {
 				console.log('Blocked: max advance days')
 				return false
@@ -202,8 +208,8 @@ public_calendar.Calendar = class Calendar {
 		// Check buffer time against existing events
 		if (this.buffer_time > 0) {
 			for (const event of this.events_cache) {
-				const event_start = moment(event.start)
-				const event_end = moment(event.end || event.start)
+				const event_start = this.toTzMoment(event.start)
+				const event_end = this.toTzMoment(event.end || event.start)
 
 				const buffered_start = moment(event_start).subtract(this.buffer_time, 'minutes')
 				const buffered_end = moment(event_end).add(this.buffer_time, 'minutes')
@@ -241,8 +247,9 @@ public_calendar.Calendar = class Calendar {
 	}
 
 	show_booking_dialog(start, end) {
-		const date_str = moment(start).format('dddd, MMMM D, YYYY')
-		const start_time_str = moment(start).format('h:mm A')
+		const tzStart = this.toTzMoment(start)
+		const date_str = tzStart.format('dddd, MMMM D, YYYY')
+		const start_time_str = tzStart.format('h:mm A')
 
 		// Build duration options in 15-minute increments
 		const duration_options = []
@@ -278,7 +285,7 @@ public_calendar.Calendar = class Calendar {
 							<div class="booking-time">
 								<span class="booking-start-time">${start_time_str}</span>
 								<span class="booking-time-separator"> – </span>
-								<span class="booking-end-time">${moment(start).add(this.slot_duration, 'minutes').format('h:mm A')}</span>
+								<span class="booking-end-time">${tzStart.clone().add(this.slot_duration, 'minutes').format('h:mm A')}</span>
 							</div>
 						</div>
 						${
@@ -316,7 +323,7 @@ public_calendar.Calendar = class Calendar {
 		// Update end time when duration changes
 		$dialog.find('#booking-duration').on('change', function () {
 			const duration = cint($(this).val())
-			const new_end = moment(start).add(duration, 'minutes')
+			const new_end = self.toTzMoment(start).add(duration, 'minutes')
 			$dialog.find('.booking-end-time').text(new_end.format('h:mm A'))
 		})
 
@@ -334,7 +341,7 @@ public_calendar.Calendar = class Calendar {
 			const subject = $dialog.find('#booking-subject').val().trim()
 			const description = $dialog.find('#booking-description').val().trim()
 			const duration = cint($dialog.find('#booking-duration').val()) || this.slot_duration
-			const actual_end = moment(start).add(duration, 'minutes')
+			const actual_end = this.toTzMoment(start).add(duration, 'minutes')
 
 			if (!subject) {
 				$dialog.find('#booking-subject').focus()
@@ -352,11 +359,11 @@ public_calendar.Calendar = class Calendar {
 			$dialog.find('.booking-dialog-confirm').prop('disabled', true).text(__('Booking...'))
 
 			const r = await frappe.call({
-				method: 'communications.communications.www.schedule.index.book_appointment',
+				method: 'communications.www.schedule.index.book_appointment',
 				args: {
 					public_calendar: this.public_calendar,
-					starts_on: moment(start).format('YYYY-MM-DD HH:mm:ss'),
-					ends_on: moment(end).format('YYYY-MM-DD HH:mm:ss'),
+					starts_on: this.toTzMoment(start).format('YYYY-MM-DD HH:mm:ss'),
+					ends_on: this.toTzMoment(end).format('YYYY-MM-DD HH:mm:ss'),
 					subject: values.subject,
 					description: values.description || '',
 				},
@@ -390,6 +397,106 @@ public_calendar.Calendar = class Calendar {
 			this.public_calendar = select.value || null
 			this.refresh()
 		})
+	}
+
+	bind_timezone_controls() {
+		const link = document.getElementById('change-timezone-link')
+		if (!link) return
+		link.addEventListener('click', e => {
+			e.preventDefault()
+			this.show_timezone_prompt()
+		})
+	}
+
+	async show_timezone_prompt() {
+		try {
+			const resp = await frappe.call({
+				method: 'frappe.core.doctype.user.user.get_timezones',
+				args: {},
+			})
+			const timezones = Array.isArray(resp.message) ? resp.message : resp.message?.timezones || []
+			if (!timezones.length) {
+				throw new Error('No timezones returned')
+			}
+			const current = this.timezone || frappe?.boot?.time_zone?.user || ''
+
+			if (typeof frappe?.ui?.form?.make_control !== 'function') {
+				this.show_timezone_fallback_prompt(timezones, current)
+				return
+			}
+
+			frappe.prompt(
+				[
+					{
+						fieldname: 'timezone',
+						label: __('Time Zone'),
+						fieldtype: 'Autocomplete',
+						reqd: 1,
+						default: current,
+						options: timezones,
+						description: __('Same timezone list as User settings'),
+					},
+				],
+				async values => {
+					const picked = (values.timezone || '').trim()
+					if (!timezones.includes(picked)) {
+						frappe.show_alert({
+							message: __('Please choose a valid timezone from the list.'),
+							indicator: 'orange',
+						})
+						return
+					}
+
+					await frappe.call({
+						method: 'communications.www.schedule.index.update_my_timezone',
+						args: { timezone: picked },
+					})
+					frappe.show_alert({ message: __('Time zone updated'), indicator: 'green' })
+					window.location.reload()
+				},
+				__('Change my Time Zone'),
+				__('Save')
+			)
+		} catch (e) {
+			console.error('Timezone load failed', e)
+			frappe.show_alert({ message: __('Could not load time zones'), indicator: 'red' })
+		}
+	}
+
+	async show_timezone_fallback_prompt(timezones, current) {
+		const defaultTz = current || timezones[0]
+		const picked = (window.prompt(__('Enter your time zone'), defaultTz) || '').trim()
+		if (!picked) return
+		if (!timezones.includes(picked)) {
+			frappe.show_alert({
+				message: __('Please enter a valid timezone (example: America/Toronto).'),
+				indicator: 'orange',
+			})
+			return
+		}
+
+		await frappe.call({
+			method: 'communications.www.schedule.index.update_my_timezone',
+			args: { timezone: picked },
+		})
+		frappe.show_alert({ message: __('Time zone updated'), indicator: 'green' })
+		window.location.reload()
+	}
+
+	toTzMoment(value) {
+		if (!this.timezone || !moment.tz) return moment(value)
+
+		// Keep displayed wall-clock time while assigning calendar timezone.
+		// This prevents "2:00 PM" from shifting across zones before validation.
+		if (moment.isMoment(value)) return value.clone().tz(this.timezone, true)
+		if (value instanceof Date) return moment(value).tz(this.timezone, true)
+		if (typeof value === 'string') return moment.tz(value, this.timezone)
+		return moment(value).tz(this.timezone, true)
+	}
+
+	getNow() {
+		if (this.timezone && moment.tz) return moment.tz(this.timezone)
+		return moment()
 	}
 
 	style_buttons() {
@@ -434,6 +541,7 @@ function initPublicCalendar() {
 		min_notice_hours: cint(wrapper.dataset.minNotice) || 0,
 		max_advance_days: cint(wrapper.dataset.maxAdvance) || 30,
 		working_hours: working_hours,
+		timezone: wrapper.dataset.timezone || null,
 	})
 }
 
