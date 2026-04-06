@@ -3,6 +3,11 @@ For license information, please see license.txt-->
 
 # Public Calendar Features
 
+<div class="byline">
+  Tyler Matteson 2026-03-04
+</div>
+
+
 This module provides public calendar and scheduling features for the Communications app. It was migrated from the `public_calendar` app.
 
 ## Features
@@ -16,7 +21,8 @@ The Public Calendar DocType allows users to create shareable calendars with conf
 - `title` - Display name for the calendar
 - `route` - URL-safe identifier for the calendar
 - `is_public` - Makes the calendar visible at `/calendar`
-- `allow_booking` - Enables the scheduling interface at- `enabled` - Master toggle
+- `allow_booking` - Enables the scheduling interface at `/schedule`
+- `enabled` - Master toggle
 
 **Scheduling Configuration:**
 - `slot_duration` - Length of each bookable time slot (minutes)
@@ -33,6 +39,15 @@ The Public Calendar DocType allows users to create shareable calendars with conf
 - `send_reminder` - Enable reminder notifications before appointments
 - `reminder_minutes_before` - How many minutes before to send reminders
 
+**Per-calendar Notification templates (Link → Notification):**
+- `host_booking_notification` - Email sent to the host on booking (when enabled)
+- `booker_booking_notification` - Email sent to the guest on booking (when enabled)
+- `cancellation_notification` - Cancellation template
+- `reschedule_notification` - Reschedule template
+- `reminder_notification` - Reminder template
+
+If unset, the code falls back to the default **Notification** record names created on install (see Installation).
+
 ## Web Pages
 
 ### Calendar View (`/calendar`)
@@ -46,6 +61,8 @@ Displays events from Public Calendar records on a read-only calendar. Visitors c
 ### Schedule View (`/schedule`)
 
 Interactive booking interface for appointments.
+
+**Authentication:** The schedule page and booking APIs require a logged-in user. **Guest** receives a not-found response (no public guest booking).
 
 **URLs:**
 - `/schedule` - Lists all calendars that accept bookings
@@ -108,12 +125,29 @@ Email notifications include ICS (iCalendar) file attachments that can be importe
 - `REQUEST` - New invitation or update
 - `CANCEL` - Appointment cancellation
 
-## Event Hooks
+## Event integration
 
-The module integrates with Frappe's Event DocType through document hooks:
+### Linking Events to a Public Calendar
 
-- `on_update` - Detects cancellation or reschedule and sends notifications
-- `on_trash` - Treats deletion as cancellation and sends notifications
+Bookings created from `/schedule` set **`reference_doctype`** = `Public Calendar` and **`reference_docname`** to the calendar’s name (same as its **route** / autoname). Notifications and RSVP logic use this link to load **Public Calendar** settings.
+
+### Document hooks (Communications)
+
+Registered on **Event** in `hooks.py`:
+
+- **`validate`** - Video conferencing (Zoom / Communications Google Meet provider). See [Video conferencing](./video-conferencing.md).
+- **`on_update`** - If the Event is tied to a Public Calendar: detects **cancel** or **reschedule** (time change) and sends the appropriate notifications.
+- **`on_trash`** - Deletes provider meetings when configured, then sends cancellation notifications for Public Calendar events when settings allow.
+
+Frappe core may also run **Event** hooks for **Google Calendar** sync; that pipeline is separate from Public Calendar notifications.
+
+## Website / Jinja
+
+`hooks.py` registers these methods for use in website templates (e.g. **Notification** HTML):
+
+- `communications.communications.notifications.rsvp_confirm_url`
+- `communications.communications.notifications.rsvp_decline_url`
+- `communications.communications.notifications.rsvp_cancel_url`
 
 ## Scheduled Tasks
 
@@ -125,15 +159,36 @@ The module integrates with Frappe's Event DocType through document hooks:
 
 Sends reminder notifications for upcoming appointments based on calendar settings.
 
-## API Endpoints
+## Whitelisted API methods
 
-### cancel_appointment
+Call these with `POST /api/method/...` (and a valid session / CSRF as usual).
+
+### Calendar view (read-only busy times)
+
+| Method | Guest allowed | Description |
+| ------ | ------------- | ----------- |
+| `communications.www.calendar.index.get_events` | Yes | Busy slots for public calendars (`is_public`); optional `public_calendar` filter |
+
+### Schedule / booking (authenticated)
+
+| Method | Guest allowed | Description |
+| ------ | ------------- | ----------- |
+| `communications.www.schedule.index.get_events` | Yes | Availability-style events for a bookable calendar (`allow_booking`) |
+| `communications.www.schedule.index.book_appointment` | No | Creates **Event**, participants, sends booking notifications |
+| `communications.www.schedule.index.get_available_timezones` | No | IANA timezones for the picker |
+| `communications.www.schedule.index.update_my_timezone` | No | Saves **User** `time_zone` |
+
+The schedule **`get_events`** method is whitelisted for **Guest**; the **`/schedule`** web page still requires login, so availability is not exposed through that route to anonymous visitors.
+
+### Cancel appointment
 
 **Method:** `communications.communications.communications.api.cancel_appointment`
 
 **Parameters:**
 - `event` (str) - Event document name
 - `reason` (str, optional) - Cancellation reason
+
+**Auth:** Caller must be an **Event Participant** linked to **User** = session user, or hold **Event** delete permission.
 
 **Returns:**
 ```json
@@ -145,9 +200,14 @@ Sends reminder notifications for upcoming appointments based on calendar setting
 
 ## Custom Fields
 
-### Event Participants - RSVP Field
+### Event — video conferencing
 
-Adds an `rsvp` Select field to the Event Participants child table with options:
+Communications adds **Video Conference Provider**, **Meeting ID**, **Meeting URL**, and **Meeting Data** on **Event**. See [Video conferencing](./video-conferencing.md).
+
+### Event Participants — RSVP
+
+Adds an **`rsvp`** Select field to the Event Participants child table with options:
+
 - Pending
 - Accepted
 - Declined
@@ -161,17 +221,28 @@ Default notifications are created automatically during app installation:
 - Public Calendar - Reschedule
 - Public Calendar - Reminder
 
+## Other app behavior
+
+- **Notification DocType** — class override `CommunicationsNotification` (see `hooks.py` → `override_doctype_class`).
+- **Desk assignment emails** — `communications` patches `frappe.desk.form.assign_to.notify_assignment` so assignment notifications can use a **Notification** with **Document Type** = **ToDo** when one is enabled (see `communications/__init__.py` and `communications.communications.overrides.assign_to`).
+
 ## Migration Notes
 
-This module was migrated from the `public_calendar` app. All import paths have been updated from `public_calendar.*` to `communications.communications.*`.
+This module was migrated from the `public_calendar` app. Python modules under the inner package use the `communications.communications.*` prefix; **website** modules live at `communications.www.*` (same pattern as a standard Frappe app).
 
-### Key File Locations
+### Key file locations
 
-| Original Path | New Path |
-|--------------|----------|
+| Original (`public_calendar` app) | Current (`communications` app) |
+| ------------------------------- | ------------------------------ |
 | `public_calendar.public_calendar.ics` | `communications.communications.ics` |
 | `public_calendar.public_calendar.notifications` | `communications.communications.notifications` |
 | `public_calendar.public_calendar.overrides.event` | `communications.communications.overrides.event` |
-| `public_calendar.www.calendar` | `communications.communications.www.calendar` |
-| `public_calendar.www.schedule` | `communications.communications.www.schedule` |
-| `public_calendar.www.rsvp` | `communications.communications.www.rsvp` |
+| `public_calendar.www.calendar` | `communications.www.calendar` |
+| `public_calendar.www.schedule` | `communications.www.schedule` |
+| `public_calendar.www.rsvp` | `communications.www.rsvp` |
+| `public_calendar.public_calendar.api` (if used) | `communications.communications.communications.api` |
+
+## Related documentation
+
+- [Video conferencing and Appointment Settings](./video-conferencing.md)
+- [Desk notifications and chat integrations](./integrations.md)
