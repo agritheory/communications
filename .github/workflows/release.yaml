@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     branches:
+      - version-14
       - version-15
 
 jobs:
@@ -10,14 +11,12 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     concurrency: release
-
     permissions:
       id-token: write
       contents: write
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
