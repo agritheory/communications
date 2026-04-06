@@ -13,10 +13,10 @@ class BaseMeetingProvider(ABC):
 	"""Abstract base class for video conference meeting providers"""
 
 	def __init__(self, settings: Document | None = None):
-		self.settings = settings or self._get_settings()
+		self.settings = settings or self.get_settings()
 
 	@abstractmethod
-	def _get_settings(self) -> Document:
+	def get_settings(self) -> Document:
 		"""Get the settings document for this provider"""
 		pass
 
@@ -77,7 +77,7 @@ class BaseMeetingProvider(ABC):
 		"""Check if this provider is enabled"""
 		return bool(self.settings and self.settings.get("enabled"))
 
-	def _calculate_duration(self, event: Document) -> int:
+	def calculate_duration(self, event: Document) -> int:
 		"""Calculate meeting duration in minutes"""
 		if event.ends_on and event.starts_on:
 			delta = event.ends_on - event.starts_on

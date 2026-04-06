@@ -1,12 +1,7 @@
 # Copyright (c) 2025, AgriTheory and contributors
 # For license information, please see license.txt
 
-"""
-ICS (iCalendar) generation utilities.
-
-Generates RFC 5545 compliant iCalendar files for event invitations,
-updates, and cancellations with RSVP support.
-"""
+"""RFC 5545 iCalendar text and email attachments for events."""
 
 from datetime import datetime
 from typing import Literal
@@ -23,20 +18,7 @@ def generate_ics(
 	attendees: list[dict] | None = None,
 	sequence: int = 0,
 ) -> str:
-	"""
-	Generate an ICS file for an event.
-
-	Args:
-	        event: Event document
-	        method: ICS method - REQUEST (invite), CANCEL, or REPLY
-	        organizer_email: Email of the organizer
-	        organizer_name: Display name of the organizer
-	        attendees: List of dicts with keys: email, name, status (NEEDS-ACTION, ACCEPTED, DECLINED, TENTATIVE)
-	        sequence: ICS sequence number (increment for updates/cancellations)
-
-	Returns:
-	        ICS file content as string
-	"""
+	"""Return VCALENDAR text for an Event (METHOD + optional organizer/attendees)."""
 	lines = [
 		"BEGIN:VCALENDAR",
 		"VERSION:2.0",
@@ -46,7 +28,7 @@ def generate_ics(
 	]
 
 	lines.extend(
-		_generate_vevent(event, method, organizer_email, organizer_name, attendees, sequence)
+		generate_vevent_lines(event, method, organizer_email, organizer_name, attendees, sequence)
 	)
 
 	lines.append("END:VCALENDAR")
@@ -54,7 +36,7 @@ def generate_ics(
 	return "\r\n".join(lines)
 
 
-def _generate_vevent(
+def generate_vevent_lines(
 	event: "frappe.Document",
 	method: str,
 	organizer_email: str | None,
@@ -65,18 +47,14 @@ def _generate_vevent(
 	"""Generate VEVENT component lines."""
 	lines = ["BEGIN:VEVENT"]
 
-	# UID - deterministic identifier from event name and site
 	uid = f"{event.name}@{frappe.local.site}"
 	lines.append(f"UID:{uid}")
 
-	# Sequence number for updates/cancellations
 	lines.append(f"SEQUENCE:{sequence}")
 
-	# Timestamps
-	dtstamp = _format_datetime_utc(datetime.utcnow())
+	dtstamp = format_datetime_utc(datetime.utcnow())
 	lines.append(f"DTSTAMP:{dtstamp}")
 
-	# Start/End times
 	starts_on = get_datetime(event.starts_on)
 	if event.all_day:
 		lines.append(f"DTSTART;VALUE=DATE:{starts_on.strftime('%Y%m%d')}")
@@ -84,47 +62,41 @@ def _generate_vevent(
 			ends_on = get_datetime(event.ends_on)
 			lines.append(f"DTEND;VALUE=DATE:{ends_on.strftime('%Y%m%d')}")
 	else:
-		lines.append(f"DTSTART:{_format_datetime_utc(starts_on)}")
+		lines.append(f"DTSTART:{format_datetime_utc(starts_on)}")
 		if event.ends_on:
 			ends_on = get_datetime(event.ends_on)
-			lines.append(f"DTEND:{_format_datetime_utc(ends_on)}")
+			lines.append(f"DTEND:{format_datetime_utc(ends_on)}")
 
-	# Summary and description
-	lines.append(f"SUMMARY:{_escape_ics_text(event.subject or 'Meeting')}")
+	lines.append(f"SUMMARY:{escape_ics_text(event.subject or 'Meeting')}")
 	if event.description:
-		lines.append(f"DESCRIPTION:{_escape_ics_text(event.description)}")
+		lines.append(f"DESCRIPTION:{escape_ics_text(event.description)}")
 
-	# Location (if any)
 	if event.get("location"):
-		lines.append(f"LOCATION:{_escape_ics_text(event.location)}")
+		lines.append(f"LOCATION:{escape_ics_text(event.location)}")
 
-	# Status
 	if method == "CANCEL":
 		lines.append("STATUS:CANCELLED")
 	else:
 		lines.append("STATUS:CONFIRMED")
 
-	# Organizer
 	if organizer_email:
 		if organizer_name:
-			lines.append(f"ORGANIZER;CN={_escape_ics_param(organizer_name)}:mailto:{organizer_email}")
+			lines.append(f"ORGANIZER;CN={escape_ics_param(organizer_name)}:mailto:{organizer_email}")
 		else:
 			lines.append(f"ORGANIZER:mailto:{organizer_email}")
 
-	# Attendees
 	if attendees:
 		for attendee in attendees:
-			lines.append(_format_attendee(attendee))
+			lines.append(format_attendee_line(attendee))
 
-	# Transparency
 	lines.append("TRANSP:OPAQUE")
 
 	lines.append("END:VEVENT")
 	return lines
 
 
-def _format_attendee(attendee: dict) -> str:
-	"""Format an ATTENDEE line with proper parameters."""
+def format_attendee_line(attendee: dict) -> str:
+	"""One ATTENDEE line for ICS."""
 	email = attendee.get("email", "")
 	name = attendee.get("name", "")
 	status = attendee.get("status", "NEEDS-ACTION")
@@ -136,12 +108,12 @@ def _format_attendee(attendee: dict) -> str:
 	if rsvp:
 		parts.append("RSVP=TRUE")
 	if name:
-		parts.append(f"CN={_escape_ics_param(name)}")
+		parts.append(f"CN={escape_ics_param(name)}")
 
 	return f"{';'.join(parts)}:mailto:{email}"
 
 
-def _format_datetime_utc(dt: datetime) -> str:
+def format_datetime_utc(dt: datetime) -> str:
 	"""Format datetime as ICS UTC timestamp (YYYYMMDDTHHMMSSZ)."""
 	if dt.tzinfo is not None:
 		import calendar
@@ -151,11 +123,10 @@ def _format_datetime_utc(dt: datetime) -> str:
 	return dt.strftime("%Y%m%dT%H%M%SZ")
 
 
-def _escape_ics_text(text: str) -> str:
-	"""Escape special characters in ICS text values."""
+def escape_ics_text(text: str) -> str:
+	"""ICS TEXT value escaping."""
 	if not text:
 		return ""
-	# RFC 5545: escape backslash, semicolon, comma, and newlines
 	text = text.replace("\\", "\\\\")
 	text = text.replace(";", "\\;")
 	text = text.replace(",", "\\,")
@@ -165,8 +136,8 @@ def _escape_ics_text(text: str) -> str:
 	return text
 
 
-def _escape_ics_param(text: str) -> str:
-	"""Escape parameter values (CN, etc). Quote if contains special chars."""
+def escape_ics_param(text: str) -> str:
+	"""ICS parameter (e.g. CN) quoting."""
 	if not text:
 		return ""
 	if any(c in text for c in [",", ";", ":", '"']):
@@ -184,11 +155,7 @@ def generate_ics_attachment(
 	filename: str | None = None,
 	sequence: int = 0,
 ) -> dict:
-	"""
-	Generate an ICS file as an email attachment dict.
-
-	Returns a dict suitable for frappe.sendmail's attachments parameter.
-	"""
+	"""Attachment dict for frappe.sendmail."""
 	content = generate_ics(event, method, organizer_email, organizer_name, attendees, sequence)
 
 	if not filename:

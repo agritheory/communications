@@ -14,7 +14,7 @@ from .base import BaseMeetingProvider
 class GoogleMeetProvider(BaseMeetingProvider):
 	"""Google Meet provider using Google Calendar integration"""
 
-	def _get_settings(self) -> Document:
+	def get_settings(self) -> Document:
 		return frappe.get_single("Appointment Settings")
 
 	def is_enabled(self) -> bool:

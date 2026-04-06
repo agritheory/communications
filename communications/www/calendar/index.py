@@ -29,7 +29,7 @@ def get_context(context):
 		context.selected_calendar = None
 
 	context.public_calendars = public_calendars
-	context.timezone = _get_user_timezone()
+	context.timezone = get_user_timezone()
 	js_path = frappe.get_app_path("communications", "public", "js", "public_calendar.js")
 	context.js_mtime = int(os.path.getmtime(js_path)) if os.path.exists(js_path) else 0
 	context.no_cache = 1
@@ -40,7 +40,7 @@ def get_events(start: str, end: str, public_calendar: str | None = None):
 	Event = DocType("Event")
 	EventParticipant = DocType("Event Participants")
 	PublicCalendar = DocType("Public Calendar")
-	start_dt, end_dt = _convert_user_date_range_to_system(start, end)
+	start_dt, end_dt = convert_user_date_range_to_system(start, end)
 
 	query = (
 		frappe.qb.from_(Event)
@@ -75,18 +75,18 @@ def get_events(start: str, end: str, public_calendar: str | None = None):
 	return query.run(as_dict=True)
 
 
-def _get_user_timezone() -> str:
+def get_user_timezone() -> str:
 	"""Use current user's timezone when available, else system timezone."""
 	if frappe.session.user and frappe.session.user != "Guest":
 		return frappe.db.get_value("User", frappe.session.user, "time_zone") or get_system_timezone()
 	return get_system_timezone()
 
 
-def _convert_user_date_range_to_system(start_date: str, end_date: str) -> tuple:
+def convert_user_date_range_to_system(start_date: str, end_date: str) -> tuple:
 	"""Convert user-local date boundaries to naive system-time datetimes."""
 	import pytz
 
-	user_tz = pytz.timezone(_get_user_timezone())
+	user_tz = pytz.timezone(get_user_timezone())
 	system_tz = pytz.timezone(get_system_timezone())
 
 	start_local = user_tz.localize(get_datetime(f"{start_date} 00:00:00"))

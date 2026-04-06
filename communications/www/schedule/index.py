@@ -55,7 +55,7 @@ def get_context(context):
 		context.parents = [{"name": _("Home"), "route": "/"}]
 
 	context.schedulable_calendars = schedulable
-	context.timezone = _get_user_timezone()
+	context.timezone = get_user_timezone()
 	js_path = frappe.get_app_path("communications", "public", "js", "public_calendar.js")
 	context.js_mtime = int(os.path.getmtime(js_path)) if os.path.exists(js_path) else 0
 	context.no_cache = 1
@@ -66,7 +66,7 @@ def get_events(start: str, end: str, public_calendar: str):
 	Event = DocType("Event")
 	EventParticipant = DocType("Event Participants")
 	PublicCalendar = DocType("Public Calendar")
-	start_dt, end_dt = _convert_user_date_range_to_system(start, end)
+	start_dt, end_dt = convert_user_date_range_to_system(start, end)
 
 	query = (
 		frappe.qb.from_(Event)
@@ -106,8 +106,8 @@ def book_appointment(
 	description: str = "",
 ):
 	calendar = frappe.get_doc("Public Calendar", public_calendar)
-	starts_on_system = _convert_user_datetime_to_system(starts_on)
-	ends_on_system = _convert_user_datetime_to_system(ends_on)
+	starts_on_system = convert_user_datetime_to_system(starts_on)
+	ends_on_system = convert_user_datetime_to_system(ends_on)
 
 	if not calendar.allow_booking:
 		frappe.throw(_("Booking is not enabled for this calendar"))
@@ -184,7 +184,7 @@ def update_my_timezone(timezone: str) -> dict:
 
 	frappe.db.set_value("User", frappe.session.user, "time_zone", timezone)
 	frappe.defaults.set_default("time_zone", timezone, frappe.session.user)
-	frappe.db.commit()
+	frappe.db.commit()  # persist User + default before returning to client  # nosemgrep: frappe-manual-commit
 	return {"timezone": timezone}
 
 
@@ -217,16 +217,16 @@ def get_contact_links(email: str) -> list[dict]:
 	return links
 
 
-def _get_user_timezone() -> str:
+def get_user_timezone() -> str:
 	"""Use current user's timezone when available, else system timezone."""
 	if frappe.session.user and frappe.session.user != "Guest":
 		return frappe.db.get_value("User", frappe.session.user, "time_zone") or get_system_timezone()
 	return get_system_timezone()
 
 
-def _convert_user_date_range_to_system(start_date: str, end_date: str) -> tuple:
+def convert_user_date_range_to_system(start_date: str, end_date: str) -> tuple:
 	"""Convert user-local date boundaries to naive system-time datetimes."""
-	user_tz = pytz.timezone(_get_user_timezone())
+	user_tz = pytz.timezone(get_user_timezone())
 	system_tz = pytz.timezone(get_system_timezone())
 
 	start_local = user_tz.localize(get_datetime(f"{start_date} 00:00:00"))
@@ -237,9 +237,9 @@ def _convert_user_date_range_to_system(start_date: str, end_date: str) -> tuple:
 	return start_system, end_system
 
 
-def _convert_user_datetime_to_system(dt_str: str):
+def convert_user_datetime_to_system(dt_str: str):
 	"""Convert a user-local datetime string to naive system-time datetime."""
-	user_tz = pytz.timezone(_get_user_timezone())
+	user_tz = pytz.timezone(get_user_timezone())
 	system_tz = pytz.timezone(get_system_timezone())
 
 	dt = get_datetime(dt_str)

@@ -1,7 +1,7 @@
 # Copyright (c) 2026, AgriTheory and contributors
 # For license information, please see license.txt
 
-import json as _json
+import json
 from datetime import datetime
 from threading import Thread
 from unittest.mock import patch
@@ -11,13 +11,13 @@ import pytest
 from frappe.utils import get_test_client
 
 from communications.communications.ics import (
-	_escape_ics_param,
-	_escape_ics_text,
+	escape_ics_param,
+	escape_ics_text,
 	generate_ics,
 	generate_ics_attachment,
 )
 from communications.communications.notifications import (
-	_reminder_already_sent,
+	reminder_already_sent,
 	generate_rsvp_token,
 	get_host_and_guests,
 	get_public_calendar_for_event,
@@ -32,91 +32,81 @@ from communications.www.rsvp.index import find_participant_by_email
 from communications.www.rsvp.index import get_context as rsvp_get_context
 from communications.www.schedule.index import get_context as schedule_get_context
 
-# ---------------------------------------------------------------------------
-# Constants & helpers
-# ---------------------------------------------------------------------------
-
 HOST_EMAIL = "dbenton@cfc.co"
 GUEST_EMAIL = "arivers@cfc.co"
 ADMIN_PASSWORD = "admin"
 GUEST_PASSWORD = "Test@1234"
 
-# Public Calendar autonames from its route field, so the name IS the route.
 CALENDAR_ROUTE = "dbenton"
 
-# ---------------------------------------------------------------------------
-# HTTP test infrastructure (werkzeug WSGI client — no running server needed)
-# ---------------------------------------------------------------------------
-
-_CLIENT = None
-_SITE = None
+DOC_CALENDAR_HOST = HOST_EMAIL
+DOC_CALENDAR_ROUTE_SUPPLIER_TASTINGS = "dbenton-supplier-tastings"
+DOC_CALENDAR_ROUTE_HOST_SHARE = "dbenton-share-audit"
+DOC_CALENDAR_ROUTE_INVALID_HOURS = "dbenton-invalid-working-hours"
 
 
-def _ensure_client():
-	"""Initialise the shared WSGI test client, setting frappe.app routing variables."""
-	global _CLIENT, _SITE
-	if _CLIENT is None:
-		import frappe.app as _frappe_app
-
-		_SITE = frappe.local.site
-		# frappe.app._site / _sites_path are only set when the dev-server starts.
-		# We must set them here so init_request() can find the site config in tests.
-		_frappe_app._site = _SITE
-		_frappe_app._sites_path = str(frappe.local.sites_path)
-		_CLIENT = get_test_client()
+wsgi_test_client = None
+wsgi_test_site = None
 
 
-class _RequestThread(Thread):
+def ensure_wsgi_test_client():
+	global wsgi_test_client, wsgi_test_site
+	if wsgi_test_client is None:
+		import frappe.app as frappe_app_module
+
+		wsgi_test_site = frappe.local.site
+		frappe_app_module._site = wsgi_test_site
+		frappe_app_module._sites_path = str(frappe.local.sites_path)
+		wsgi_test_client = get_test_client()
+
+
+class WsgiRequestThread(Thread):
 	"""Run a single werkzeug test-client call in a thread for frappe.local isolation."""
 
 	def __init__(self, fn, path, **kwargs):
 		super().__init__(daemon=True)
-		self._fn = fn
-		self._path = path
-		self._kwargs = kwargs
+		self.request_fn = fn
+		self.request_path = path
+		self.request_kwargs = kwargs
 		self.response = None
-		self._exc = None
+		self.captured_exception = None
 
 	def run(self):
 		try:
-			self.response = self._fn(self._path, **self._kwargs)
+			self.response = self.request_fn(self.request_path, **self.request_kwargs)
 		except Exception as e:
-			self._exc = e
+			self.captured_exception = e
 
 	def join(self, timeout=None):
 		super().join(timeout=timeout)
-		if self._exc is not None:
-			raise self._exc
+		if self.captured_exception is not None:
+			raise self.captured_exception
 
 
-def _http(method, path, data=None):
-	"""Make an HTTP request via the Frappe WSGI test client."""
-	_ensure_client()
+def wsgi_http_request(method, path, data=None):
+	ensure_wsgi_test_client()
 	kwargs = {"json": data} if data is not None else {}
-	t = _RequestThread(getattr(_CLIENT, method), path, **kwargs)
-	t.start()
-	t.join()
-	return t.response
+	thread = WsgiRequestThread(getattr(wsgi_test_client, method), path, **kwargs)
+	thread.start()
+	thread.join()
+	return thread.response
 
 
-def _login(user, password):
-	"""Authenticate the test HTTP client as *user*. Session cookie is stored in _CLIENT."""
-	response = _http("post", "/api/method/login", {"usr": user, "pwd": password})
+def login_wsgi_client(user, password):
+	response = wsgi_http_request("post", "/api/method/login", {"usr": user, "pwd": password})
 	assert response.status_code == 200, f"Login as {user!r} failed ({response.status_code})"
 
 
-def _api_data(response):
-	"""Return the unwrapped 'message' payload from a Frappe API response."""
-	return _json.loads(response.data)["message"]
+def api_message_from_response(response):
+	return json.loads(response.data)["message"]
 
 
-def _upcoming_slot(days_ahead=7, hour=10):
-	"""Return a datetime string for an appointment slot relative to today."""
+def upcoming_slot_string(days_ahead=7, hour=10):
 	d = frappe.utils.add_days(frappe.utils.getdate(), days_ahead)
 	return f"{d} {hour:02d}:00:00"
 
 
-def _get_booked_event():
+def get_fixture_booked_event():
 	"""Look up the shared booked event created by before_test."""
 	name = frappe.db.get_value(
 		"Event", {"subject": "Test Appointment", "reference_docname": CALENDAR_ROUTE}, "name"
@@ -145,11 +135,6 @@ def make_fake_event(name="EVT-001", all_day=0, starts_on=None, ends_on=None):
 			"get": lambda key, default=None: None,
 		}
 	)
-
-
-# ---------------------------------------------------------------------------
-# ICS generation — orders 1–6
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.order(1)
@@ -188,26 +173,26 @@ def test_generate_ics_all_day_event():
 
 @pytest.mark.order(4)
 def test_ics_escape_text():
-	assert _escape_ics_text("back\\slash") == "back\\\\slash"
-	assert _escape_ics_text("semi;colon") == "semi\\;colon"
-	assert _escape_ics_text("com,ma") == "com\\,ma"
-	assert _escape_ics_text("new\nline") == "new\\nline"
-	assert _escape_ics_text("cr\ronly") == "cr\\nonly"
-	assert _escape_ics_text("crlf\r\nend") == "crlf\\nend"
+	assert escape_ics_text("back\\slash") == "back\\\\slash"
+	assert escape_ics_text("semi;colon") == "semi\\;colon"
+	assert escape_ics_text("com,ma") == "com\\,ma"
+	assert escape_ics_text("new\nline") == "new\\nline"
+	assert escape_ics_text("cr\ronly") == "cr\\nonly"
+	assert escape_ics_text("crlf\r\nend") == "crlf\\nend"
 
 
 @pytest.mark.order(5)
 def test_ics_escape_param_quotes_special_chars():
 	# plain name — no quoting needed
-	assert _escape_ics_param("Jane Doe") == "Jane Doe"
+	assert escape_ics_param("Jane Doe") == "Jane Doe"
 	# colon triggers quoting
-	result = _escape_ics_param("Org: Dept")
+	result = escape_ics_param("Org: Dept")
 	assert result.startswith('"') and result.endswith('"')
 	# semicolon triggers quoting
-	result = _escape_ics_param("A;B")
+	result = escape_ics_param("A;B")
 	assert result.startswith('"') and result.endswith('"')
 	# embedded double-quote is escaped inside the quoted string
-	result = _escape_ics_param('Say "hello"')
+	result = escape_ics_param('Say "hello"')
 	assert '\\"' in result
 
 
@@ -222,11 +207,6 @@ def test_generate_ics_attachment_dict():
 	cancel_attachment = generate_ics_attachment(event, method="CANCEL")
 	assert cancel_attachment["fname"] == "cancellation.ics"
 	assert cancel_attachment["content_type"] == "text/calendar; method=CANCEL"
-
-
-# ---------------------------------------------------------------------------
-# RSVP tokens — orders 7–11
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.order(7)
@@ -270,11 +250,6 @@ def test_get_rsvp_url_contains_expected_params():
 	assert "token=" in url
 
 
-# ---------------------------------------------------------------------------
-# Notification & booking flows — orders 12–23
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.order(12)
 def test_get_public_calendar_for_event():
 	linked_event = frappe._dict(
@@ -299,7 +274,7 @@ def test_get_public_calendar_for_event():
 @pytest.mark.order(13)
 def test_get_host_and_guests_splits_correctly():
 	calendar = frappe.get_doc("Public Calendar", CALENDAR_ROUTE)
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 
 	host, guests = get_host_and_guests(event, calendar)
 
@@ -311,13 +286,13 @@ def test_get_host_and_guests_splits_correctly():
 
 @pytest.mark.order(14)
 def test_reminder_already_sent_false_initially():
-	event = _get_booked_event()
-	assert not _reminder_already_sent(event.name)
+	event = get_fixture_booked_event()
+	assert not reminder_already_sent(event.name)
 
 
 @pytest.mark.order(15)
 def test_reminder_already_sent_true_after_comment():
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 
 	frappe.get_doc(
 		{
@@ -329,7 +304,7 @@ def test_reminder_already_sent_true_after_comment():
 		}
 	).insert(ignore_permissions=True)
 
-	assert _reminder_already_sent(event.name)
+	assert reminder_already_sent(event.name)
 
 	frappe.db.delete("Comment", {"reference_doctype": "Event", "reference_name": event.name})
 
@@ -338,7 +313,7 @@ def test_reminder_already_sent_true_after_comment():
 @patch("frappe.sendmail")
 def test_notify_booking_sends_to_host_and_guest(mock_sendmail):
 	calendar = frappe.get_doc("Public Calendar", CALENDAR_ROUTE)
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 
 	notify_booking(event, calendar)
 
@@ -351,7 +326,7 @@ def test_notify_booking_sends_to_host_and_guest(mock_sendmail):
 @pytest.mark.order(17)
 @patch("frappe.sendmail")
 def test_notify_cancellation_skips_when_flag_off(mock_sendmail):
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 	cal_no_cancel = frappe._dict({"notify_on_cancellation": 0})
 
 	notify_cancellation(event, cal_no_cancel, HOST_EMAIL)
@@ -363,7 +338,7 @@ def test_notify_cancellation_skips_when_flag_off(mock_sendmail):
 @patch("frappe.sendmail")
 def test_notify_cancellation_skips_canceller(mock_sendmail):
 	calendar = frappe.get_doc("Public Calendar", CALENDAR_ROUTE)
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 
 	notify_cancellation(event, calendar, HOST_EMAIL)
 
@@ -376,7 +351,7 @@ def test_notify_cancellation_skips_canceller(mock_sendmail):
 @patch("frappe.sendmail")
 def test_notify_reschedule_skips_rescheduler(mock_sendmail):
 	calendar = frappe.get_doc("Public Calendar", CALENDAR_ROUTE)
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 
 	notify_reschedule(event, calendar, GUEST_EMAIL)
 
@@ -389,7 +364,7 @@ def test_notify_reschedule_skips_rescheduler(mock_sendmail):
 @patch("frappe.sendmail")
 def test_notify_reschedule_from_host_notifies_guests(mock_sendmail):
 	calendar = frappe.get_doc("Public Calendar", CALENDAR_ROUTE)
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 
 	notify_reschedule(event, calendar, HOST_EMAIL)
 
@@ -399,47 +374,45 @@ def test_notify_reschedule_from_host_notifies_guests(mock_sendmail):
 
 
 @pytest.mark.order(21)
-@patch("frappe.sendmail")
-def test_book_appointment_creates_event(_):
-	_login(GUEST_EMAIL, GUEST_PASSWORD)
-	response = _http(
-		"post",
-		"/api/method/communications.www.schedule.index.book_appointment",
-		{
-			"public_calendar": CALENDAR_ROUTE,
-			"starts_on": _upcoming_slot(days_ahead=14, hour=14),
-			"ends_on": _upcoming_slot(days_ahead=14, hour=15),
-			"subject": "Test Booking",
-		},
-	)
-	_login("Administrator", ADMIN_PASSWORD)
+def test_book_appointment_creates_event():
+	with patch("frappe.sendmail"):
+		login_wsgi_client(GUEST_EMAIL, GUEST_PASSWORD)
+		response = wsgi_http_request(
+			"post",
+			"/api/method/communications.www.schedule.index.book_appointment",
+			{
+				"public_calendar": CALENDAR_ROUTE,
+				"starts_on": upcoming_slot_string(days_ahead=14, hour=14),
+				"ends_on": upcoming_slot_string(days_ahead=14, hour=15),
+				"subject": "Test Booking",
+			},
+		)
+		login_wsgi_client("Administrator", ADMIN_PASSWORD)
 
-	assert response.status_code == 200
-	event_name = _api_data(response)
-	assert event_name  # API returned the new event's name
+		assert response.status_code == 200
+		event_name = api_message_from_response(response)
+		assert event_name  # API returned the new event's name
 
-	# Verify and clean up via the HTTP layer — the main thread's DB connection
-	# runs under MySQL REPEATABLE READ and cannot see rows committed by the HTTP
-	# thread, so we use a fresh request (new connection) for both checks.
-	fetch = _http("get", f"/api/resource/Event/{event_name}")
-	assert fetch.status_code == 200
-	event_data = _json.loads(fetch.data)["data"]
-	assert event_data["reference_doctype"] == "Public Calendar"
-	assert event_data["reference_docname"] == CALENDAR_ROUTE
-	participant_users = [
-		p["reference_docname"]
-		for p in event_data.get("event_participants", [])
-		if p["reference_doctype"] == "User"
-	]
-	assert HOST_EMAIL in participant_users
-	assert GUEST_EMAIL in participant_users
+		# Verify and clean up via the HTTP layer — the main thread's DB connection
+		# runs under MySQL REPEATABLE READ and cannot see rows committed by the HTTP
+		# thread, so we use a fresh request (new connection) for both checks.
+		fetch = wsgi_http_request("get", f"/api/resource/Event/{event_name}")
+		assert fetch.status_code == 200
+		event_data = json.loads(fetch.data)["data"]
+		assert event_data["reference_doctype"] == "Public Calendar"
+		assert event_data["reference_docname"] == CALENDAR_ROUTE
+		participant_users = [
+			p["reference_docname"]
+			for p in event_data.get("event_participants", [])
+			if p["reference_doctype"] == "User"
+		]
+		assert HOST_EMAIL in participant_users
+		assert GUEST_EMAIL in participant_users
 
-	_http("delete", f"/api/resource/Event/{event_name}")
-
-
-# ---------------------------------------------------------------------------
-# Calendar & schedule event queries — orders 22–24
-# ---------------------------------------------------------------------------
+		cleanup = wsgi_http_request("delete", f"/api/resource/Event/{event_name}")
+		assert (
+			cleanup.status_code == 202
+		), f"Event cleanup DELETE failed: {cleanup.status_code} {cleanup.get_data(as_text=True)[:800]}"
 
 
 @pytest.mark.order(22)
@@ -447,14 +420,14 @@ def test_get_calendar_events_returns_booked_event():
 	start = f"{frappe.utils.getdate()} 00:00:00"
 	end = f"{frappe.utils.add_days(frappe.utils.getdate(), 14)} 23:59:59"
 
-	response = _http(
+	response = wsgi_http_request(
 		"post",
 		"/api/method/communications.www.calendar.index.get_events",
 		{"start": start, "end": end, "public_calendar": CALENDAR_ROUTE},
 	)
 
 	assert response.status_code == 200
-	events = _api_data(response)
+	events = api_message_from_response(response)
 	assert isinstance(events, list)
 	assert len(events) >= 1
 	assert all(e["calendar"] == CALENDAR_ROUTE for e in events)
@@ -465,14 +438,14 @@ def test_get_calendar_events_without_filter():
 	start = f"{frappe.utils.getdate()} 00:00:00"
 	end = f"{frappe.utils.add_days(frappe.utils.getdate(), 14)} 23:59:59"
 
-	response = _http(
+	response = wsgi_http_request(
 		"post",
 		"/api/method/communications.www.calendar.index.get_events",
 		{"start": start, "end": end},
 	)
 
 	assert response.status_code == 200
-	events = _api_data(response)
+	events = api_message_from_response(response)
 	assert isinstance(events, list)
 	assert any(e["calendar"] == CALENDAR_ROUTE for e in events)
 
@@ -482,21 +455,16 @@ def test_get_schedule_events_shows_booked_slot():
 	start = f"{frappe.utils.getdate()} 00:00:00"
 	end = f"{frappe.utils.add_days(frappe.utils.getdate(), 14)} 23:59:59"
 
-	response = _http(
+	response = wsgi_http_request(
 		"post",
 		"/api/method/communications.www.schedule.index.get_events",
 		{"start": start, "end": end, "public_calendar": CALENDAR_ROUTE},
 	)
 
 	assert response.status_code == 200
-	events = _api_data(response)
+	events = api_message_from_response(response)
 	assert isinstance(events, list)
 	assert len(events) >= 1
-
-
-# ---------------------------------------------------------------------------
-# RSVP get_context flows — orders 25–28
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.order(25)
@@ -514,7 +482,7 @@ def test_rsvp_missing_params_returns_error():
 
 @pytest.mark.order(26)
 def test_rsvp_invalid_token_returns_error():
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 	_saved = frappe.local.form_dict
 	frappe.local.form_dict = frappe._dict(
 		{
@@ -536,7 +504,7 @@ def test_rsvp_invalid_token_returns_error():
 @pytest.mark.order(27)
 @patch("frappe.sendmail")
 def test_rsvp_confirm_via_context(_):
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 	token = generate_rsvp_token(event.name, GUEST_EMAIL, "confirm")
 	_saved = frappe.local.form_dict
 	frappe.local.form_dict = frappe._dict(
@@ -563,7 +531,7 @@ def test_rsvp_confirm_via_context(_):
 @pytest.mark.order(28)
 @patch("frappe.sendmail")
 def test_rsvp_cancel_via_context(_):
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 	token = generate_rsvp_token(event.name, GUEST_EMAIL, "cancel")
 	_saved = frappe.local.form_dict
 	frappe.local.form_dict = frappe._dict(
@@ -586,11 +554,6 @@ def test_rsvp_cancel_via_context(_):
 	assert event.status == "Cancelled"
 	updated = find_participant_by_email(event, GUEST_EMAIL)
 	assert updated.rsvp == "Cancelled"
-
-
-# ---------------------------------------------------------------------------
-# Calendar & schedule page context — orders 29–32
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.order(29)
@@ -645,14 +608,9 @@ def test_schedule_page_context_no_route():
 		frappe.local.form_dict = saved
 
 
-# ---------------------------------------------------------------------------
-# RSVP error paths & decline action — orders 33–36
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.order(33)
 def test_rsvp_invalid_action_returns_error():
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 	token = generate_rsvp_token(event.name, GUEST_EMAIL, "confirm")
 	_saved = frappe.local.form_dict
 	frappe.local.form_dict = frappe._dict(
@@ -685,7 +643,7 @@ def test_rsvp_nonexistent_event_returns_error():
 
 @pytest.mark.order(35)
 def test_rsvp_non_participant_returns_error():
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 	non_participant = "mmckay@cfc.co"
 	token = generate_rsvp_token(event.name, non_participant, "confirm")
 	_saved = frappe.local.form_dict
@@ -704,7 +662,7 @@ def test_rsvp_non_participant_returns_error():
 @pytest.mark.order(36)
 @patch("frappe.sendmail")
 def test_rsvp_decline_via_context(_):
-	event = _get_booked_event()
+	event = get_fixture_booked_event()
 	token = generate_rsvp_token(event.name, GUEST_EMAIL, "decline")
 	_saved = frappe.local.form_dict
 	frappe.local.form_dict = frappe._dict(
@@ -721,3 +679,84 @@ def test_rsvp_decline_via_context(_):
 	event.reload()
 	updated = find_participant_by_email(event, GUEST_EMAIL)
 	assert updated.rsvp == "Declined"
+
+
+@pytest.mark.order(40)
+def test_public_calendar_insert_persists_title_user_and_route():
+	"""Operations host gets a second public calendar row autonamed from its route."""
+	if frappe.db.exists("Public Calendar", DOC_CALENDAR_ROUTE_SUPPLIER_TASTINGS):
+		frappe.delete_doc(
+			"Public Calendar", DOC_CALENDAR_ROUTE_SUPPLIER_TASTINGS, force=1, ignore_permissions=True
+		)
+
+	calendar = frappe.get_doc(
+		{
+			"doctype": "Public Calendar",
+			"title": "Darnell Benton — Supplier tastings",
+			"user": DOC_CALENDAR_HOST,
+			"route": DOC_CALENDAR_ROUTE_SUPPLIER_TASTINGS,
+			"is_public": 1,
+			"enabled": 1,
+		}
+	)
+	calendar.insert(ignore_permissions=True)
+
+	assert calendar.name == DOC_CALENDAR_ROUTE_SUPPLIER_TASTINGS
+	assert calendar.title == "Darnell Benton — Supplier tastings"
+	assert calendar.user == DOC_CALENDAR_HOST
+
+	frappe.delete_doc("Public Calendar", calendar.name, force=1, ignore_permissions=True)
+
+
+@pytest.mark.order(45)
+def test_public_calendar_rejects_overlapping_working_hours():
+	"""Overlapping Monday blocks on the same day fail validation before insert."""
+	calendar = frappe.get_doc(
+		{
+			"doctype": "Public Calendar",
+			"title": "Darnell Benton — Bad hours",
+			"user": DOC_CALENDAR_HOST,
+			"route": DOC_CALENDAR_ROUTE_INVALID_HOURS,
+			"working_hours": json.dumps(
+				{
+					"monday": [
+						{"start": "09:00", "end": "12:00"},
+						{"start": "11:00", "end": "14:00"},
+					]
+				}
+			),
+		}
+	)
+
+	with pytest.raises(frappe.ValidationError, match="overlap"):
+		calendar.insert(ignore_permissions=True)
+
+
+@pytest.mark.order(50)
+def test_public_calendar_shares_with_host_on_insert():
+	"""New calendar is DocShared to the host user for read/write."""
+	if frappe.db.exists("Public Calendar", DOC_CALENDAR_ROUTE_HOST_SHARE):
+		frappe.delete_doc(
+			"Public Calendar", DOC_CALENDAR_ROUTE_HOST_SHARE, force=1, ignore_permissions=True
+		)
+
+	calendar = frappe.get_doc(
+		{
+			"doctype": "Public Calendar",
+			"title": "Darnell Benton — Share check",
+			"user": DOC_CALENDAR_HOST,
+			"route": DOC_CALENDAR_ROUTE_HOST_SHARE,
+		}
+	)
+	calendar.insert(ignore_permissions=True)
+
+	assert frappe.db.exists(
+		"DocShare",
+		{
+			"share_doctype": "Public Calendar",
+			"share_name": calendar.name,
+			"user": DOC_CALENDAR_HOST,
+		},
+	)
+
+	frappe.delete_doc("Public Calendar", calendar.name, force=1, ignore_permissions=True)

@@ -56,7 +56,7 @@ def test_zoom_provider_calculate_duration():
 		{"starts_on": datetime(2025, 3, 2, 10, 0), "ends_on": datetime(2025, 3, 2, 11, 30)}
 	)
 
-	duration = provider._calculate_duration(event)
+	duration = provider.calculate_duration(event)
 	assert duration == 90  # 1.5 hours = 90 minutes
 
 
@@ -66,7 +66,7 @@ def test_zoom_provider_calculate_duration_no_end_time():
 
 	event = frappe._dict({"starts_on": datetime(2025, 3, 2, 10, 0), "ends_on": None})
 
-	duration = provider._calculate_duration(event)
+	duration = provider.calculate_duration(event)
 	assert duration == 30  # Default duration
 
 
@@ -87,7 +87,7 @@ def test_zoom_refresh_token(mock_get_single, mock_post):
 	mock_post.return_value = mock_response
 
 	provider = ZoomProvider(settings)
-	token = provider._refresh_token()
+	token = provider.refresh_token()
 
 	assert token == "new_test_token"
 	settings.save.assert_called_once()

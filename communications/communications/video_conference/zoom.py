@@ -21,18 +21,18 @@ class ZoomProvider(BaseMeetingProvider):
 	API_BASE_URL = "https://api.zoom.us/v2"
 	TOKEN_URL = "https://zoom.us/oauth/token"
 
-	def _get_settings(self) -> Document:
+	def get_settings(self) -> Document:
 		return frappe.get_single("Appointment Settings")
 
 	def is_enabled(self) -> bool:
 		return bool(self.settings.enable_zoom)
 
-	def _get_client(self) -> requests.Session:
+	def get_client(self) -> requests.Session:
 		"""Get authenticated Zoom API client"""
 		access_token = self.settings.get_password("zoom_access_token")
 
 		if not access_token:
-			access_token = self._refresh_token()
+			access_token = self.refresh_token()
 
 		session = requests.Session()
 		session.headers.update(
@@ -40,7 +40,7 @@ class ZoomProvider(BaseMeetingProvider):
 		)
 		return session
 
-	def _refresh_token(self) -> str:
+	def refresh_token(self) -> str:
 		"""Refresh Zoom access token using Server-to-Server OAuth"""
 		client_id = self.settings.zoom_client_id
 		client_secret = self.settings.get_password("zoom_client_secret")
@@ -69,14 +69,14 @@ class ZoomProvider(BaseMeetingProvider):
 
 	def create_meeting(self, event: Document) -> dict[str, Any]:
 		"""Create a Zoom meeting for the event"""
-		client = self._get_client()
+		client = self.get_client()
 
 		# Get the Zoom user email - from event or settings
 		user_email = event.get("zoom_user_email") or self.settings.zoom_user_email
 		if not user_email:
 			frappe.throw(_("Zoom user email not configured"))
 
-		duration = self._calculate_duration(event)
+		duration = self.calculate_duration(event)
 
 		data = {
 			"topic": event.subject,
@@ -91,8 +91,8 @@ class ZoomProvider(BaseMeetingProvider):
 
 		# Handle token expiration
 		if response.status_code == 401:
-			self._refresh_token()
-			client = self._get_client()
+			self.refresh_token()
+			client = self.get_client()
 			response = client.post(f"{self.API_BASE_URL}/users/{user_email}/meetings", json=data)
 
 		response.raise_for_status()
@@ -106,8 +106,8 @@ class ZoomProvider(BaseMeetingProvider):
 
 	def update_meeting(self, meeting_id: str, event: Document) -> bool:
 		"""Update an existing Zoom meeting"""
-		client = self._get_client()
-		duration = self._calculate_duration(event)
+		client = self.get_client()
+		duration = self.calculate_duration(event)
 
 		data = {
 			"topic": event.subject,
@@ -122,15 +122,15 @@ class ZoomProvider(BaseMeetingProvider):
 
 		# Handle token expiration
 		if response.status_code == 401:
-			self._refresh_token()
-			client = self._get_client()
+			self.refresh_token()
+			client = self.get_client()
 			response = client.patch(f"{self.API_BASE_URL}/meetings/{meeting_id}", json=data)
 
 		return response.ok
 
 	def delete_meeting(self, meeting_id: str) -> bool:
 		"""Delete a Zoom meeting"""
-		client = self._get_client()
+		client = self.get_client()
 
 		response = client.delete(f"{self.API_BASE_URL}/meetings/{meeting_id}")
 
@@ -140,8 +140,8 @@ class ZoomProvider(BaseMeetingProvider):
 
 		# Handle token expiration
 		if response.status_code == 401:
-			self._refresh_token()
-			client = self._get_client()
+			self.refresh_token()
+			client = self.get_client()
 			response = client.delete(f"{self.API_BASE_URL}/meetings/{meeting_id}")
 
 		return response.ok
