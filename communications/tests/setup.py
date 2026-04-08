@@ -6,6 +6,11 @@ from erpnext.accounts.doctype.account.account import update_account_number
 from erpnext.setup.utils import enable_all_roles_and_domains, set_defaults_for_tests
 from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
 
+from frappe.utils.password import update_password
+
+from communications.communications.install import create_default_notifications
+from communications.tests.fixtures import employees, holidays
+
 
 def before_test():
 	frappe.clear_cache()
@@ -57,6 +62,11 @@ def create_test_data():
 	)
 	create_company_address(settings)
 	create_bank_and_bank_account(settings)
+	create_employees(settings)
+	add_holiday_lists()
+	create_default_notifications()
+	create_public_calendars()
+	create_booked_event()
 
 
 def create_company_address(settings):
@@ -126,3 +136,100 @@ def setup_accounts():
 	)
 	update_account_number("1110 - Cash - CFC", "Petty Cash", account_number="1110")
 	update_account_number("Primary Checking - CFC", "Primary Checking", account_number="1201")
+
+
+def create_public_calendars():
+	if frappe.db.exists("Public Calendar", "dbenton"):
+		return
+	cal = frappe.get_doc(
+		{
+			"doctype": "Public Calendar",
+			"title": "Darnell Benton",
+			"user": "dbenton@cfc.co",
+			"route": "dbenton",
+			"enabled": 1,
+			"is_public": 1,
+			"allow_booking": 1,
+			"notify_host_on_booking": 1,
+			"notify_guest_on_booking": 1,
+			"notify_on_cancellation": 1,
+		}
+	)
+	cal.insert(ignore_permissions=True)
+
+
+def create_booked_event():
+	# Always recreate so tests start with a clean (non-Cancelled) event.
+	existing = frappe.db.get_value(
+		"Event", {"subject": "Test Appointment", "reference_docname": "dbenton"}, "name"
+	)
+	if existing:
+		frappe.delete_doc("Event", existing, force=1, ignore_permissions=True)
+
+	d = frappe.utils.add_days(frappe.utils.getdate(), 7)
+	event = frappe.get_doc(
+		{
+			"doctype": "Event",
+			"subject": "Test Appointment",
+			"starts_on": f"{d} 10:00:00",
+			"ends_on": f"{d} 11:00:00",
+			"event_type": "Public",
+			"reference_doctype": "Public Calendar",
+			"reference_docname": "dbenton",
+		}
+	)
+	event.append(
+		"event_participants", {"reference_doctype": "User", "reference_docname": "dbenton@cfc.co"}
+	)
+	event.append(
+		"event_participants", {"reference_doctype": "User", "reference_docname": "arivers@cfc.co"}
+	)
+	event.insert(ignore_permissions=True)
+
+
+def create_employees(settings, only_create=None):
+	for employee in employees:
+		if only_create and employee.get("employee_name") not in only_create:
+			continue
+
+		if frappe.db.exists("Employee", {"employee_name": employee.get("employee_name")}):
+			continue
+
+		if not frappe.db.exists("Designation", employee.get("designation")):
+			desg = frappe.new_doc("Designation")
+			desg.designation_name = employee.get("designation")
+			desg.save()
+
+		empl = frappe.new_doc("Employee")
+		empl.update(employee)
+		empl.reports_to = None
+		if settings.company:
+			empl.company = settings.company
+		empl.save()
+
+		user = frappe.new_doc("User")
+		user.email = f"{empl.first_name[0].lower()}{empl.last_name.lower()}@cfc.co"
+		user.first_name = empl.first_name
+		user.last_name = empl.last_name
+		user.send_welcome_email = 0
+		user.enabled = 1
+		user.language = settings.language
+		user.time_zone = settings.time_zone
+		for r in employee.get("roles", []):
+			user.append("roles", {"role": r})
+
+		user.save()
+		update_password(user.email, "Test@1234")
+		empl.user_id = user.email
+		if employee.get("reports_to"):
+			empl.reports_to = frappe.get_value("Employee", {"employee_name": employee.get("reports_to")})
+		empl.save()
+
+
+def add_holiday_lists():
+	for holiday_list in holidays:
+		if frappe.db.exists("Holiday List", holiday_list.get("holiday_list_name")):
+			continue
+		hl = frappe.new_doc("Holiday List")
+		hl.update(holiday_list)
+		hl.save()

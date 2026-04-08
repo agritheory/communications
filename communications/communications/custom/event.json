@@ -1,0 +1,43 @@
+{
+	"custom_fields": [
+		{
+			"name": "Event-video_conference_provider",
+			"fieldname": "video_conference_provider",
+			"fieldtype": "Select",
+			"label": "Video Conference Provider",
+			"options": "None\nZoom\nGoogle Meet",
+			"insert_after": "description",
+			"module": "Communications"
+		},
+		{
+			"name": "Event-video_conference_meeting_id",
+			"fieldname": "video_conference_meeting_id",
+			"fieldtype": "Data",
+			"label": "Meeting ID",
+			"hidden": 1,
+			"insert_after": "video_conference_provider",
+			"module": "Communications"
+		},
+		{
+			"name": "Event-video_conference_url",
+			"fieldname": "video_conference_url",
+			"fieldtype": "Data",
+			"label": "Meeting URL",
+			"read_only": 1,
+			"insert_after": "video_conference_meeting_id",
+			"module": "Communications"
+		},
+		{
+			"name": "Event-video_conference_data",
+			"fieldname": "video_conference_data",
+			"fieldtype": "JSON",
+			"label": "Meeting Data",
+			"hidden": 1,
+			"insert_after": "video_conference_url",
+			"module": "Communications"
+		}
+	],
+	"doctype": "Event",
+	"property_setters": [],
+	"sync_on_migrate": 1
+}

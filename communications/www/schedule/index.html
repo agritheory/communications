@@ -1,0 +1,59 @@
+{% extends "templates/web.html" %}
+
+{% block style %}
+<link rel="stylesheet" href="/assets/frappe/js/lib/fullcalendar/fullcalendar.min.css">
+<link rel="stylesheet" href="/assets/communications/css/public_calendar.css">
+<style>
+/* Hide Frappe default navbar/footer on schedule pages */
+nav.navbar,
+header .navbar,
+header.sticky-top,
+.navbar-expand-lg,
+.web-footer,
+footer.web-footer,
+.navbar-brand + .navbar-collapse,
+.navbar-toggler {
+    display: none !important;
+}
+.page-content-wrapper { padding-top: 16px !important; }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="public-calendar-container">
+	{% if not calendar %}
+	<h1 class="calendar-title">{{ _("Schedule a Meeting") }}</h1>
+	<div class="calendar-list">
+		{% for cal in schedulable_calendars %}
+		<a href="/schedule?name={{ cal.route }}" class="calendar-card">
+			<div class="calendar-card-title">{{ cal.title or cal.name }}</div>
+		</a>
+		{% endfor %}
+	</div>
+	{% else %}
+	<h1 class="calendar-title">{{ calendar.title or calendar.name }}</h1>
+	<p class="calendar-timezone text-muted">
+		{{ _("Times shown in") }} <strong>{{ timezone }}</strong>
+		<a href="#" id="change-timezone-link" class="calendar-timezone-link">{{ _("Change my Time Zone") }}</a>
+	</p>
+	<div id="public-calendar-wrapper" data-calendar="{{ calendar.name }}"
+		data-method="communications.www.schedule.index.get_events"
+		data-busy-text="{{ calendar.busy_text or 'Unavailable' }}" data-slot-duration="{{ calendar.slot_duration or 30 }}"
+		data-max-duration="{{ calendar.max_meeting_duration or calendar.slot_duration or 30 }}"
+		data-buffer-time="{{ calendar.buffer_time or 0 }}" data-min-notice="{{ calendar.min_notice_hours or 0 }}"
+		data-max-advance="{{ calendar.max_advance_days or 30 }}" data-working-hours="{{ calendar.working_hours | e }}"
+		data-dialog-title="{{ calendar.booking_dialog_title or _('Book Appointment') }}" data-mode="schedule"
+		data-timezone="{{ timezone }}">
+	</div>
+	{% endif %}
+</div>
+{% endblock %}
+
+{% block script %}
+{% if calendar %}
+<script src="/assets/communications/js/public_calendar.js?v={{ js_mtime }}"></script>
+<script>
+	frappe.ready(() => public_calendar.init())
+</script>
+{% endif %}
+{% endblock %}
