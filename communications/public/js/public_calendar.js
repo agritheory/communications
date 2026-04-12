@@ -8,6 +8,25 @@ public_calendar.Calendar = class Calendar {
 		this.wrapper = wrapper
 		this.options = options
 		this.public_calendar = options.public_calendar || null
+		// Polymorphic portal back-link (e.g. Task) from /schedule?reference_doctype=Task&reference_docname=...
+		// or ?task=TASK-NAME (same convention as /portal/development?task=… and onboarding).
+		const bookingParams = new URLSearchParams(window.location.search || '')
+		let rd = options.booking_reference_doctype || bookingParams.get('reference_doctype') || null
+		let rn = options.booking_reference_docname || bookingParams.get('reference_docname') || null
+		const taskParam = bookingParams.get('task')
+		if ((!rd || !rn) && taskParam) {
+			rd = 'Task'
+			rn = taskParam
+		}
+		this.booking_reference_doctype = rd
+		this.booking_reference_docname = rn
+		const subjParam = bookingParams.get('subject')
+		const descParam = bookingParams.get('description')
+		const fromUrlSubj = subjParam != null && String(subjParam).trim() !== '' ? String(subjParam).trim() : ''
+		const fromUrlDesc = descParam != null && String(descParam).trim() !== '' ? String(descParam).trim() : ''
+		// URL wins; else server may pass Task subject/description (reference_doctype=Task).
+		this.booking_default_subject = fromUrlSubj || options.booking_prefill_subject || ''
+		this.booking_default_description = fromUrlDesc || options.booking_prefill_description || ''
 		this.method = options.method || 'communications.www.calendar.index.get_events'
 		this.mode = options.mode || 'calendar'
 		this.slot_duration = options.slot_duration || 30
@@ -320,6 +339,13 @@ public_calendar.Calendar = class Calendar {
 		const $dialog = $(dialog_html).appendTo('body')
 		const self = this
 
+		if (this.booking_default_subject) {
+			$dialog.find('#booking-subject').val(this.booking_default_subject)
+		}
+		if (this.booking_default_description) {
+			$dialog.find('#booking-description').val(this.booking_default_description)
+		}
+
 		// Update end time when duration changes
 		$dialog.find('#booking-duration').on('change', function () {
 			const duration = cint($(this).val())
@@ -351,22 +377,31 @@ public_calendar.Calendar = class Calendar {
 			this.book_slot(start, actual_end, { subject, description }, $dialog)
 		})
 
-		$dialog.find('#booking-subject').focus()
+		if (this.booking_default_subject) {
+			$dialog.find('#booking-description').focus()
+		} else {
+			$dialog.find('#booking-subject').focus()
+		}
 	}
 
 	async book_slot(start, end, values, $dialog) {
 		try {
 			$dialog.find('.booking-dialog-confirm').prop('disabled', true).text(__('Booking...'))
 
+			const bookArgs = {
+				public_calendar: this.public_calendar,
+				starts_on: this.toTzMoment(start).format('YYYY-MM-DD HH:mm:ss'),
+				ends_on: this.toTzMoment(end).format('YYYY-MM-DD HH:mm:ss'),
+				subject: values.subject,
+				description: values.description || '',
+			}
+			if (this.booking_reference_doctype && this.booking_reference_docname) {
+				bookArgs.reference_doctype = this.booking_reference_doctype
+				bookArgs.reference_docname = this.booking_reference_docname
+			}
 			const r = await frappe.call({
 				method: 'communications.www.schedule.index.book_appointment',
-				args: {
-					public_calendar: this.public_calendar,
-					starts_on: this.toTzMoment(start).format('YYYY-MM-DD HH:mm:ss'),
-					ends_on: this.toTzMoment(end).format('YYYY-MM-DD HH:mm:ss'),
-					subject: values.subject,
-					description: values.description || '',
-				},
+				args: bookArgs,
 			})
 
 			if (r.message) {
@@ -542,6 +577,8 @@ function initPublicCalendar() {
 		max_advance_days: cint(wrapper.dataset.maxAdvance) || 30,
 		working_hours: working_hours,
 		timezone: wrapper.dataset.timezone || null,
+		booking_prefill_subject: wrapper.dataset.bookingPrefillSubject || '',
+		booking_prefill_description: wrapper.dataset.bookingPrefillDescription || '',
 	})
 }
 

@@ -416,6 +416,127 @@ def test_book_appointment_creates_event():
 
 
 @pytest.mark.order(22)
+def test_book_appointment_links_task_when_reference_provided():
+	if not frappe.db.has_column("Task", "portal_scheduled_event"):
+		pytest.skip("Task.portal_scheduled_event not installed on this site")
+
+	frappe.set_user("Administrator")
+	projects = frappe.get_all(
+		"Project", filters={"status": ["!=", "Cancelled"]}, limit=1, pluck="name"
+	)
+	if not projects:
+		pytest.skip("No project for Task fixture")
+	project = projects[0]
+
+	task = frappe.get_doc(
+		{
+			"doctype": "Task",
+			"subject": "Portal booking reference test",
+			"project": project,
+			"status": "Open",
+		}
+	)
+	task.insert(ignore_permissions=True)
+	task_name = task.name
+
+	if not frappe.db.exists("Project User", {"parent": project, "user": GUEST_EMAIL}):
+		frappe.get_doc(
+			{
+				"doctype": "Project User",
+				"parent": project,
+				"parenttype": "Project",
+				"user": GUEST_EMAIL,
+			}
+		).insert(ignore_permissions=True)
+
+	frappe.db.commit()
+
+	with patch("frappe.sendmail"):
+		login_wsgi_client(GUEST_EMAIL, GUEST_PASSWORD)
+		response = wsgi_http_request(
+			"post",
+			"/api/method/communications.www.schedule.index.book_appointment",
+			{
+				"public_calendar": CALENDAR_ROUTE,
+				"starts_on": upcoming_slot_string(days_ahead=21, hour=15),
+				"ends_on": upcoming_slot_string(days_ahead=21, hour=16),
+				"subject": "Booking with Task ref",
+				"reference_doctype": "Task",
+				"reference_docname": task_name,
+			},
+		)
+	login_wsgi_client("Administrator", ADMIN_PASSWORD)
+
+	assert response.status_code == 200
+	event_name = api_message_from_response(response)
+	assert event_name
+
+	fetch = wsgi_http_request("get", f"/api/resource/Task/{task_name}")
+	assert fetch.status_code == 200
+	task_data = json.loads(fetch.data)["data"]
+	assert task_data.get("portal_scheduled_event") == event_name
+
+	cleanup_ev = wsgi_http_request("delete", f"/api/resource/Event/{event_name}")
+	assert cleanup_ev.status_code == 202
+	frappe.delete_doc("Task", task_name, force=True, ignore_permissions=True)
+	frappe.db.commit()
+
+
+@pytest.mark.order(23)
+def test_book_appointment_skips_task_link_when_user_has_no_project_access():
+	if not frappe.db.has_column("Task", "portal_scheduled_event"):
+		pytest.skip("Task.portal_scheduled_event not installed on this site")
+
+	frappe.set_user("Administrator")
+	iso = frappe.new_doc("Project")
+	iso.project_name = "Isolated booking ref test"
+	iso.status = "Open"
+	iso.insert(ignore_permissions=True)
+
+	task = frappe.get_doc(
+		{
+			"doctype": "Task",
+			"subject": "Inaccessible task for booking ref",
+			"project": iso.name,
+			"status": "Open",
+		}
+	)
+	task.insert(ignore_permissions=True)
+	task_name = task.name
+	frappe.db.commit()
+
+	with patch("frappe.sendmail"):
+		login_wsgi_client(GUEST_EMAIL, GUEST_PASSWORD)
+		response = wsgi_http_request(
+			"post",
+			"/api/method/communications.www.schedule.index.book_appointment",
+			{
+				"public_calendar": CALENDAR_ROUTE,
+				"starts_on": upcoming_slot_string(days_ahead=22, hour=11),
+				"ends_on": upcoming_slot_string(days_ahead=22, hour=12),
+				"subject": "Booking inaccessible task ref",
+				"reference_doctype": "Task",
+				"reference_docname": task_name,
+			},
+		)
+	login_wsgi_client("Administrator", ADMIN_PASSWORD)
+
+	assert response.status_code == 200
+	event_name = api_message_from_response(response)
+
+	fetch = wsgi_http_request("get", f"/api/resource/Task/{task_name}")
+	assert fetch.status_code == 200
+	task_data = json.loads(fetch.data)["data"]
+	assert not task_data.get("portal_scheduled_event")
+
+	cleanup_ev = wsgi_http_request("delete", f"/api/resource/Event/{event_name}")
+	assert cleanup_ev.status_code == 202
+	frappe.delete_doc("Task", task_name, force=True, ignore_permissions=True)
+	frappe.delete_doc("Project", iso.name, force=True, ignore_permissions=True)
+	frappe.db.commit()
+
+
+@pytest.mark.order(24)
 def test_get_calendar_events_returns_booked_event():
 	start = f"{frappe.utils.getdate()} 00:00:00"
 	end = f"{frappe.utils.add_days(frappe.utils.getdate(), 14)} 23:59:59"
@@ -433,7 +554,7 @@ def test_get_calendar_events_returns_booked_event():
 	assert all(e["calendar"] == CALENDAR_ROUTE for e in events)
 
 
-@pytest.mark.order(23)
+@pytest.mark.order(25)
 def test_get_calendar_events_without_filter():
 	start = f"{frappe.utils.getdate()} 00:00:00"
 	end = f"{frappe.utils.add_days(frappe.utils.getdate(), 14)} 23:59:59"
@@ -450,7 +571,7 @@ def test_get_calendar_events_without_filter():
 	assert any(e["calendar"] == CALENDAR_ROUTE for e in events)
 
 
-@pytest.mark.order(24)
+@pytest.mark.order(26)
 def test_get_schedule_events_shows_booked_slot():
 	start = f"{frappe.utils.getdate()} 00:00:00"
 	end = f"{frappe.utils.add_days(frappe.utils.getdate(), 14)} 23:59:59"
@@ -467,7 +588,7 @@ def test_get_schedule_events_shows_booked_slot():
 	assert len(events) >= 1
 
 
-@pytest.mark.order(25)
+@pytest.mark.order(27)
 def test_rsvp_missing_params_returns_error():
 	_saved = frappe.local.form_dict
 	frappe.local.form_dict = frappe._dict()
@@ -480,7 +601,7 @@ def test_rsvp_missing_params_returns_error():
 		frappe.local.form_dict = _saved
 
 
-@pytest.mark.order(26)
+@pytest.mark.order(28)
 def test_rsvp_invalid_token_returns_error():
 	event = get_fixture_booked_event()
 	_saved = frappe.local.form_dict
@@ -501,7 +622,7 @@ def test_rsvp_invalid_token_returns_error():
 		frappe.local.form_dict = _saved
 
 
-@pytest.mark.order(27)
+@pytest.mark.order(29)
 @patch("frappe.sendmail")
 def test_rsvp_confirm_via_context(_):
 	event = get_fixture_booked_event()
@@ -528,7 +649,7 @@ def test_rsvp_confirm_via_context(_):
 	assert updated.rsvp == "Accepted"
 
 
-@pytest.mark.order(28)
+@pytest.mark.order(30)
 @patch("frappe.sendmail")
 def test_rsvp_cancel_via_context(_):
 	event = get_fixture_booked_event()
@@ -556,7 +677,7 @@ def test_rsvp_cancel_via_context(_):
 	assert updated.rsvp == "Cancelled"
 
 
-@pytest.mark.order(29)
+@pytest.mark.order(31)
 def test_calendar_page_context_with_route():
 	saved = frappe.local.form_dict
 	frappe.local.form_dict = frappe._dict({"name": CALENDAR_ROUTE})
@@ -569,7 +690,7 @@ def test_calendar_page_context_with_route():
 		frappe.local.form_dict = saved
 
 
-@pytest.mark.order(30)
+@pytest.mark.order(32)
 def test_calendar_page_context_no_route():
 	saved = frappe.local.form_dict
 	frappe.local.form_dict = frappe._dict()
@@ -582,7 +703,7 @@ def test_calendar_page_context_no_route():
 		frappe.local.form_dict = saved
 
 
-@pytest.mark.order(31)
+@pytest.mark.order(33)
 def test_schedule_page_context_with_route():
 	saved = frappe.local.form_dict
 	frappe.local.form_dict = frappe._dict({"name": CALENDAR_ROUTE})
@@ -595,7 +716,7 @@ def test_schedule_page_context_with_route():
 		frappe.local.form_dict = saved
 
 
-@pytest.mark.order(32)
+@pytest.mark.order(34)
 def test_schedule_page_context_no_route():
 	saved = frappe.local.form_dict
 	frappe.local.form_dict = frappe._dict()
@@ -608,7 +729,7 @@ def test_schedule_page_context_no_route():
 		frappe.local.form_dict = saved
 
 
-@pytest.mark.order(33)
+@pytest.mark.order(35)
 def test_rsvp_invalid_action_returns_error():
 	event = get_fixture_booked_event()
 	token = generate_rsvp_token(event.name, GUEST_EMAIL, "confirm")
@@ -625,7 +746,7 @@ def test_rsvp_invalid_action_returns_error():
 		frappe.local.form_dict = _saved
 
 
-@pytest.mark.order(34)
+@pytest.mark.order(36)
 def test_rsvp_nonexistent_event_returns_error():
 	token = generate_rsvp_token("NO-SUCH-EVENT", GUEST_EMAIL, "confirm")
 	_saved = frappe.local.form_dict
@@ -641,7 +762,7 @@ def test_rsvp_nonexistent_event_returns_error():
 		frappe.local.form_dict = _saved
 
 
-@pytest.mark.order(35)
+@pytest.mark.order(37)
 def test_rsvp_non_participant_returns_error():
 	event = get_fixture_booked_event()
 	non_participant = "mmckay@cfc.co"
@@ -659,7 +780,7 @@ def test_rsvp_non_participant_returns_error():
 		frappe.local.form_dict = _saved
 
 
-@pytest.mark.order(36)
+@pytest.mark.order(38)
 @patch("frappe.sendmail")
 def test_rsvp_decline_via_context(_):
 	event = get_fixture_booked_event()
