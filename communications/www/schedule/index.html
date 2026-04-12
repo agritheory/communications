@@ -25,7 +25,7 @@ footer.web-footer,
 	<h1 class="calendar-title">{{ _("Schedule a Meeting") }}</h1>
 	<div class="calendar-list">
 		{% for cal in schedulable_calendars %}
-		<a href="/schedule?name={{ cal.route }}" class="calendar-card">
+		<a href="/schedule?name={{ cal.route }}{{ booking_reference_query_suffix or '' }}" class="calendar-card">
 			<div class="calendar-card-title">{{ cal.title or cal.name }}</div>
 		</a>
 		{% endfor %}
@@ -43,7 +43,9 @@ footer.web-footer,
 		data-buffer-time="{{ calendar.buffer_time or 0 }}" data-min-notice="{{ calendar.min_notice_hours or 0 }}"
 		data-max-advance="{{ calendar.max_advance_days or 30 }}" data-working-hours="{{ calendar.working_hours | e }}"
 		data-dialog-title="{{ calendar.booking_dialog_title or _('Book Appointment') }}" data-mode="schedule"
-		data-timezone="{{ timezone }}">
+		data-timezone="{{ timezone }}"
+		data-booking-prefill-subject="{{ booking_prefill_subject | e }}"
+		data-booking-prefill-description="{{ booking_prefill_description | e }}">
 	</div>
 	{% endif %}
 </div>
