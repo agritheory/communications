@@ -5,6 +5,14 @@ For license information, please see license.txt-->
 
 <!-- version list -->
 
+## v15.4.0 (2026-04-12)
+
+### Features
+
+- Add query params to calendar for more interactive appointment scheduling
+  ([`eeb2646`](https://github.com/agritheory/communications/commit/eeb26469701d40125969848d5ae1515a802e5dc5))
+
+
 ## v15.3.0 (2026-04-08)
 
 ### Chores
