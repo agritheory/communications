@@ -1,0 +1,73 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2026-04-16 12:00:00.000000",
+	"doctype": "DocType",
+	"editable_grid": 1,
+	"engine": "InnoDB",
+	"field_order": [
+		"contact",
+		"contact_name",
+		"email",
+		"executed_at",
+		"column_break_pbds",
+		"signature"
+	],
+	"fields": [
+		{
+			"fieldname": "contact",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Contact",
+			"options": "Contact"
+		},
+		{
+			"fetch_from": "contact.full_name",
+			"fieldname": "contact_name",
+			"fieldtype": "Data",
+			"in_list_view": 1,
+			"label": "Contact Name"
+		},
+		{
+			"fetch_from": "contact.email_id",
+			"fieldname": "email",
+			"fieldtype": "Data",
+			"in_list_view": 1,
+			"label": "Email",
+			"reqd": 1
+		},
+		{
+			"fieldname": "executed_at",
+			"fieldtype": "Datetime",
+			"in_list_view": 1,
+			"label": "Executed At",
+			"no_copy": 1,
+			"read_only": 1
+		},
+		{
+			"fieldname": "column_break_pbds",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "signature",
+			"fieldtype": "Signature",
+			"in_list_view": 1,
+			"label": "Signature",
+			"no_copy": 1,
+			"read_only": 1
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"istable": 1,
+	"links": [],
+	"modified": "2026-04-16 12:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "Communications",
+	"name": "Electronic Signature Signer",
+	"owner": "Administrator",
+	"permissions": [],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

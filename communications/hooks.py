@@ -61,6 +61,7 @@ jinja = {
 
 # before_install = "communications.install.before_install"
 after_install = "communications.communications.install.after_install"
+after_migrate = "communications.communications.install.after_migrate"
 
 # before_uninstall = "communications.uninstall.before_uninstall"
 # after_uninstall = "communications.uninstall.after_uninstall"
@@ -83,6 +84,21 @@ after_install = "communications.communications.install.after_install"
 
 override_doctype_class = {
 	"Notification": "communications.communications.overrides.notification.CommunicationsNotification",
+}
+
+has_permission = {
+	"Electronic Signature": "communications.communications.doctype.electronic_signature.electronic_signature.has_electronic_signature_permission",
+}
+
+website_route_rules = [
+	{"from_route": "/electronic_signature/<name>", "to_route": "electronic_signature/[name]"},
+	{"from_route": "/electronic_signature", "to_route": "electronic_signature"},
+	{"from_route": "/sign/<name>", "to_route": "electronic_signature/[name]"},
+	{"from_route": "/sign", "to_route": "electronic_signature"},
+]
+
+doctype_js = {
+	"Electronic Signature": "public/js/electronic_signature.js",
 }
 
 doc_events = {

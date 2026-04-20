@@ -11,6 +11,12 @@ import frappe
 def after_install():
 	"""Create default notifications after app installation."""
 	create_default_notifications()
+	create_electronic_signature_email_template()
+
+
+def after_migrate():
+	"""Ensure optional records exist after schema changes."""
+	create_electronic_signature_email_template()
 
 
 def create_default_notifications():
@@ -196,3 +202,25 @@ def create_default_notifications():
 				}
 			)
 			doc.insert(ignore_permissions=True)
+
+
+def create_electronic_signature_email_template():
+	name = "Electronic Signature Request"
+	if frappe.db.exists("Email Template", name):
+		return
+	doc = frappe.get_doc(
+		{
+			"doctype": "Email Template",
+			"name": name,
+			"subject": "Please sign: {{ title }}",
+			"use_html": 1,
+			"response_html": """<p>Hello,</p>
+<p>Please review and sign the following document: <strong>{{ title }}</strong></p>
+{% if introduction %}{{ introduction }}{% endif %}
+<p>Use the secure link below to open the signing page.</p>
+<p>MAGIC_LINK</p>
+<p>If you did not expect this message, you can ignore it.</p>
+""",
+		}
+	)
+	doc.insert(ignore_permissions=True)
