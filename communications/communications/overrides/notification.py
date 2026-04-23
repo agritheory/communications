@@ -2,7 +2,6 @@
 # For license information, please see license.txt
 
 import json
-import requests
 
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -11,6 +10,25 @@ import frappe
 from frappe.email.doctype.notification.notification import Notification, get_context
 from frappe.utils.jinja import validate_template
 from frappe.utils import get_url_to_form
+
+from communications.communications.doctype.teams_webhook_url.teams_webhook_url import (
+	TeamsMessagingError,
+)
+
+# Error Log title field max 140 chars
+TEAMS_DM_LOG_TITLE = "Teams DM send failed"
+TEAMS_DM_INIT_LOG_TITLE = "Teams DM client init failed"
+
+
+def teams_dm_error_body(recipient: str, exc: BaseException) -> str:
+	lines = [f"Recipient: {recipient}", ""]
+	if isinstance(exc, TeamsMessagingError):
+		lines.append(exc.message)
+		if exc.details:
+			lines.extend(["", "Details:", frappe.as_json(exc.details, indent=2)])
+	else:
+		lines.extend([str(exc), "", frappe.get_traceback()])
+	return "\n".join(lines)
 
 
 class CommunicationsNotification(Notification):
@@ -92,19 +110,6 @@ class CommunicationsNotification(Notification):
 			self.log_error(f"Error fetching user ID: {e.response['error']}")
 			return None
 
-	def get_teams_conversation_reference(self, email):
-		"""Get stored Teams conversation reference for user."""
-		cache_key = f"teams_conversation_ref:{email}"
-		conv_ref_json = frappe.cache().get_value(cache_key)
-
-		if not conv_ref_json:
-			return None
-
-		try:
-			return json.loads(conv_ref_json)
-		except Exception as e:
-			return None
-
 	def send_a_slack_dm_msg(self, doc, context):
 		if frappe.are_emails_muted():
 			return
@@ -149,7 +154,7 @@ class CommunicationsNotification(Notification):
 					self.log_error("Failed to send Slack Notification", e)
 
 	def send_a_teams_dm_msg(self, doc, context):
-		"""Send a direct message via Microsoft Teams."""
+		"""Send a direct message via Microsoft Teams using Bot Framework REST API."""
 		recipients, cc, bcc = self.get_list_of_recipients(doc, context)
 
 		if not (recipients or cc or bcc):
@@ -159,11 +164,24 @@ class CommunicationsNotification(Notification):
 
 		teams_webhook_doc = frappe.get_doc("Teams Webhook URL", self.teams_webhook_url)
 
-		if not teams_webhook_doc.use_bot_framework:
-			self.log_error("Teams DM requires bot credentials to be configured")
+		# Check if Bot Framework configuration is complete
+		if not (
+			teams_webhook_doc.bot_app_id
+			and teams_webhook_doc.bot_app_secret
+			and teams_webhook_doc.tenant_id
+		):
+			self.log_error("Teams DM requires Bot App ID, Bot App Secret, and Tenant ID")
 			return
 
-		bot_creds = teams_webhook_doc.get_bot_credentials()
+		try:
+			messaging_client = teams_webhook_doc.get_messaging_client()
+		except Exception as e:
+			self.log_error(
+				title=TEAMS_DM_INIT_LOG_TITLE,
+				message=f"{e}\n\n{frappe.get_traceback()}",
+			)
+			return
+
 		show_link = teams_webhook_doc.show_document_link
 		doc_url = get_url_to_form(doc.doctype, doc.name)
 		message_text = frappe.render_template(self.message, context)
@@ -173,76 +191,8 @@ class CommunicationsNotification(Notification):
 		if show_link:
 			body_content += f'<p><a href="{doc_url}">Go to the document</a></p>'
 
-		# Get bot token (cached)
-		token = self._get_teams_bot_token(bot_creds)
-		if not token:
-			self.log_error("Failed to get Teams bot token")
-			return
-
 		for recipient in recipients:
-			conv_ref = self.get_teams_conversation_reference(recipient)
-			if not conv_ref:
-				self.log_error(
-					f"No Teams conversation reference for {recipient}. User must message the bot first."
-				)
-				continue
-
 			try:
-				# Build activity for Bot Connector API
-				activity = {
-					"type": "message",
-					"from": {"id": bot_creds["app_id"], "name": conv_ref.get("bot", {}).get("name", "Bot")},
-					"conversation": {"id": conv_ref["conversation"]["id"]},
-					"recipient": conv_ref["user"],
-					"text": body_content,
-					"textFormat": "html",
-				}
-
-				# Send to Bot Connector API
-				service_url = conv_ref["serviceUrl"]
-				conversation_id = conv_ref["conversation"]["id"]
-				endpoint = f"{service_url}/v3/conversations/{conversation_id}/activities"
-
-				headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-
-				response = requests.post(endpoint, headers=headers, json=activity)
-
-				if response.status_code not in (200, 201):
-					self.log_error(f"Failed to send Teams message to {recipient}: {response.text}")
-
+				messaging_client.send_dm_to_user(email=recipient, message=body_content, content_type="html")
 			except Exception as e:
-				self.log_error(f"Failed to send Teams DM to {recipient}", e)
-
-	def _get_teams_bot_token(self, bot_creds):
-		"""Get Bot Framework access token (with caching)."""
-		import requests
-
-		# Check cache
-		cache_key = f"teams_bot_token:{bot_creds['app_id']}"
-		cached_token = frappe.cache().get_value(cache_key)
-		if cached_token:
-			return cached_token
-
-		# Get new token
-		token_url = "https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token"
-		data = {
-			"grant_type": "client_credentials",
-			"client_id": bot_creds["app_id"],
-			"client_secret": bot_creds["app_password"],
-			"scope": "https://api.botframework.com/.default",
-		}
-
-		try:
-			response = requests.post(token_url, data=data)
-			response.raise_for_status()
-
-			result = response.json()
-			token = result["access_token"]
-
-			# Cache for 55 minutes (tokens expire in 1 hour)
-			frappe.cache().set_value(cache_key, token, expires_in_sec=3300)
-
-			return token
-		except Exception as e:
-			frappe.log_error("Failed to get Teams bot token", e)
-			return None
+				self.log_error(title=TEAMS_DM_LOG_TITLE, message=teams_dm_error_body(recipient, e))

@@ -3,6 +3,11 @@ For license information, please see license.txt-->
 
 # Desk notifications and chat integrations
 
+<div class="byline">
+  Tyler Matteson 2026-04-06
+</div>
+
+
 These features are not part of the public calendar; they extend **Notification** and desk behavior across the site.
 
 ## Notification DocType override
@@ -14,13 +19,13 @@ These features are not part of the public calendar; they extend **Notification**
 Beyond standard Frappe channels, the override supports:
 
 - **Slack DM** — uses **Slack Webhook URL** (the linked doc’s webhook value is treated as a **Bot User OAuth Token** for `users_lookupByEmail` and chat post APIs).
-- **Teams DM** — uses **Teams Webhook URL** (Microsoft Graph client credentials) to resolve the recipient by email and send a Teams message.
+- **Teams DM** — uses **Teams Webhook URL**: **Bot App ID**, **Bot App Secret**, **Tenant ID** (and optional fields). The implementation (`TeamsWebhookURL.get_messaging_client()` in `teams_webhook_url.py`) builds a **Bot Framework** client that also uses **Microsoft Graph** (same Entra app, `User.Read.All`) to resolve the recipient to an **Azure AD object id**, then creates a 1:1 chat and posts over the Teams connector. See [Teams setup](./teams_setup.md).
 
-Configure the webhook/credential DocTypes, then create **Notification** records with **Channel** = **Slack DM** or **Teams DM** and link the corresponding URL record.
+Configure the credential DocTypes, then create **Notification** records with **Channel** = **Slack DM** or **Teams DM** and link the corresponding **Webhook URL** record.
 
-### Teams Webhook URL
+### Teams Webhook URL (Teams DM)
 
-Stores **tenant_id**, **client_id**, **client_secret** (password), **tenant_domain** (optional, for guest/external user lookup), and related options. **`client()`** obtains a Graph API bearer token and returns a `requests` session scoped to `https://graph.microsoft.com/v1.0`.
+Bot Framework fields plus service URL, etc. Details and Azure permissions are in [teams_setup.md](./teams_setup.md).
 
 ## Assignment notifications
 

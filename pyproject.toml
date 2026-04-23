@@ -90,3 +90,6 @@ build_command = "echo 1"
 [tool.semantic_release.branches.version]
 match = "version-(15|16)"
 
+[tool.codespell]
+skip = "CHANGELOG.md"
+ignore-words-list = "notin,Greif"
