@@ -6,10 +6,10 @@
 
 {% block page_content %}
 <article class="electronic-signature-detail">
-	<div class="row">
-		<div class="col-lg-9 col-md-12">
+	<div class="row justify-content-center">
+		<div class="col-12 col-lg-11">
 			<section class="card">
-				<div class="card-body">
+				<div class="card-body px-3 px-md-4 py-4">
 					{% if electronic_signature.introduction %}
 					<section class="mb-3">
 						{{ electronic_signature.introduction }}
@@ -18,9 +18,10 @@
 					{% endif %}
 					{% if electronic_signature.document_html %}
 					<section class="document-section mb-4">
-						<h4>{{ _("Document") }}</h4>
-						<div class="document-html">
-							{{ electronic_signature.document_html | safe }}
+						<div class="es-document-print-frame">
+							<div class="document-html es-document-html">
+								{{ electronic_signature.document_html | safe }}
+							</div>
 						</div>
 					</section>
 					<hr>
@@ -161,6 +162,39 @@
 <style>
 	.electronic-signature-detail {
 		margin-bottom: 2rem;
+	}
+
+	/* One column for heading + embed: horizontal rhythm matches print preview gutter (Frappe standard.css). */
+	.es-document-print-frame {
+		box-sizing: border-box;
+		width: 100%;
+		max-width: 100%;
+		margin-left: auto;
+		margin-right: auto;
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
+	}
+
+	@media (min-width: 768px) {
+		.es-document-print-frame {
+			padding-left: 1.25rem;
+			padding-right: 1.25rem;
+		}
+	}
+
+	@media (min-width: 992px) {
+		.es-document-print-frame {
+			padding-left: 1.5rem;
+			padding-right: 1.5rem;
+		}
+	}
+
+	.document-html.es-document-html .print-format-gutter {
+		box-sizing: border-box;
+	}
+
+	.document-html.es-document-html .action-banner {
+		display: none !important;
 	}
 
 	.signature-pad {

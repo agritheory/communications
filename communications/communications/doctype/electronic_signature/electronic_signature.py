@@ -32,6 +32,21 @@ def agent_debug_log(hypothesis_id, location, message, data=None):
 # #endregion
 
 
+def strip_embedded_print_toolbar_html(html: str) -> str:
+	"""Remove Frappe printview toolbar (Print / Get PDF) from HTML embedded on the website."""
+	if not html or "action-banner" not in html:
+		return html
+	try:
+		from bs4 import BeautifulSoup
+
+		soup = BeautifulSoup(html, "html.parser")
+		for node in soup.select(".action-banner"):
+			node.decompose()
+		return str(soup)
+	except Exception:
+		return html
+
+
 def website_portal_signer_may_read(doc, user):
 	"""Website User may read this doc on the portal when they are a listed signer (contact match)."""
 	if not doc or not user or user == "Guest":
@@ -58,12 +73,14 @@ class ElectronicSignature(Document):
 			return ""
 		try:
 			ref_doc = frappe.get_doc(self.reference_doctype, self.reference_name)
-			return frappe.get_print(
-				self.reference_doctype,
-				self.reference_name,
-				print_format=self.print_format or None,
-				doc=ref_doc,
-			)
+			kwargs = {
+				"print_format": self.print_format or None,
+				"doc": ref_doc,
+			}
+			if frappe.db.has_column("Electronic Signature", "letter_head") and self.get("letter_head"):
+				kwargs["letterhead"] = self.letter_head
+			raw = frappe.get_print(self.reference_doctype, self.reference_name, **kwargs)
+			return strip_embedded_print_toolbar_html(raw)
 		except Exception:
 			frappe.log_error(
 				title="Electronic Signature document_html print render",

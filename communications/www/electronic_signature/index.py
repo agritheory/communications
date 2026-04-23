@@ -41,7 +41,6 @@ def get_context(context):
 			fields=["name", "title", "status", "reference_doctype", "reference_name", "modified"],
 			order_by="modified desc",
 		)
-		print(rows)
 		for row in rows:
 			row["needs_signature"] = signer_row_needs_signature(row.name, contact)
 		context.signatures = rows
