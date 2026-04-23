@@ -30,7 +30,7 @@ PHONE_NUMBER_PATTERN = re.compile(
 )
 
 
-def _validate_data_fields(self):
+def validate_data_fields(self):
 	# data_field options defined in frappe.model.data_field_options
 	for phone_field in self.meta.get_phone_fields():
 		phone = self.get(phone_field.fieldname)

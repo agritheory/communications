@@ -1,0 +1,110 @@
+{
+	"actions": [],
+	"creation": "2025-03-02 16:50:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"zoom_section",
+		"enable_zoom",
+		"zoom_account_id",
+		"zoom_client_id",
+		"column_break_zoom",
+		"zoom_client_secret",
+		"zoom_access_token",
+		"zoom_user_email",
+		"google_meet_section",
+		"enable_google_meet",
+		"google_meet_note"
+	],
+	"fields": [
+		{
+			"fieldname": "zoom_section",
+			"fieldtype": "Section Break",
+			"label": "Zoom"
+		},
+		{
+			"default": "0",
+			"fieldname": "enable_zoom",
+			"fieldtype": "Check",
+			"label": "Enable Zoom"
+		},
+		{
+			"fieldname": "zoom_account_id",
+			"fieldtype": "Data",
+			"label": "Account ID",
+			"depends_on": "enable_zoom"
+		},
+		{
+			"fieldname": "zoom_client_id",
+			"fieldtype": "Data",
+			"label": "Client ID",
+			"depends_on": "enable_zoom"
+		},
+		{
+			"fieldname": "column_break_zoom",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "zoom_client_secret",
+			"fieldtype": "Password",
+			"label": "Client Secret",
+			"depends_on": "enable_zoom"
+		},
+		{
+			"fieldname": "zoom_access_token",
+			"fieldtype": "Password",
+			"hidden": 1,
+			"label": "Access Token"
+		},
+		{
+			"fieldname": "zoom_user_email",
+			"fieldtype": "Data",
+			"label": "Default Zoom User Email",
+			"depends_on": "enable_zoom",
+			"description": "The Zoom user email to create meetings on behalf of"
+		},
+		{
+			"fieldname": "google_meet_section",
+			"fieldtype": "Section Break",
+			"label": "Google Meet"
+		},
+		{
+			"default": "0",
+			"fieldname": "enable_google_meet",
+			"fieldtype": "Check",
+			"label": "Enable Google Meet"
+		},
+		{
+			"fieldname": "google_meet_note",
+			"fieldtype": "HTML",
+			"options": "<div class=\"alert alert-info\">\nGoogle Meet requires Google Calendar integration to be configured for the user.\n</div>",
+			"depends_on": "enable_google_meet"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2025-03-02 16:50:00.000000",
+	"modified_by": "Administrator",
+	"module": "Communications",
+	"name": "Appointment Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"row_format": "Dynamic",
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

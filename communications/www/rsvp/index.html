@@ -1,0 +1,52 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div style="max-width: 500px; margin: 60px auto; text-align: center; padding: 0 20px;">
+	{% if error %}
+	<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+		<svg style="width: 48px; height: 48px; color: #dc2626; margin-bottom: 16px;" fill="none" stroke="currentColor"
+			viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+				d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+		</svg>
+		<h2 style="margin: 0 0 8px 0; color: #991b1b;">{{ _("Error") }}</h2>
+		<p style="margin: 0; color: #b91c1c;">{{ error }}</p>
+	</div>
+	{% elif result %}
+	{% if result.action == "confirm" %}
+	<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 24px;">
+		<svg style="width: 48px; height: 48px; color: #22c55e; margin-bottom: 16px;" fill="none" stroke="currentColor"
+			viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+				d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+		</svg>
+		<h2 style="margin: 0 0 8px 0; color: #166534;">{{ _("Confirmed") }}</h2>
+		<p style="margin: 0; color: #15803d;">{{ result.message }}</p>
+	</div>
+	{% elif result.action == "decline" %}
+	<div style="background: #fefce8; border: 1px solid #fef08a; border-radius: 8px; padding: 24px;">
+		<svg style="width: 48px; height: 48px; color: #eab308; margin-bottom: 16px;" fill="none" stroke="currentColor"
+			viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+				d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+		</svg>
+		<h2 style="margin: 0 0 8px 0; color: #854d0e;">{{ _("Declined") }}</h2>
+		<p style="margin: 0; color: #a16207;">{{ result.message }}</p>
+	</div>
+	{% elif result.action == "cancel" %}
+	<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 24px;">
+		<svg style="width: 48px; height: 48px; color: #ef4444; margin-bottom: 16px;" fill="none" stroke="currentColor"
+			viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+		</svg>
+		<h2 style="margin: 0 0 8px 0; color: #991b1b;">{{ _("Cancelled") }}</h2>
+		<p style="margin: 0; color: #b91c1c;">{{ result.message }}</p>
+	</div>
+	{% endif %}
+	{% endif %}
+
+	<p style="margin-top: 24px;">
+		<a href="/" style="color: #6b7280; text-decoration: none;">&larr; {{ _("Return to Home") }}</a>
+	</p>
+</div>
+{% endblock %}

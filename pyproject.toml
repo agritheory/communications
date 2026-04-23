@@ -1,12 +1,14 @@
 [project]
 name = "communications"
+version = "15.4.0"
 description = "Messaging and telephony extensions for Frappe"
 authors = [
     { name = "AgriTheory", email = "support@agritheory.dev"}
 ]
 readme = "README.md"
 license = { file = "LICENSE" }
-dynamic = ["dependencies", "version", "requires-python"]
+requires-python = ">=3.10,<3.14"
+dynamic = ["dependencies"]
 
 [project.urls]
 homepage = "https://github.com/agritheory/communications"
@@ -22,18 +24,20 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 requires-poetry = ">=2.0"
-version =  "15.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.14"
 slack-sdk = "^3.39.0"
 
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.15.0"
-pytest = "^8.3.5"
-pytest-cov = "^6.0.0"
-pytest-order = "^1.2.1"
-test_utils = { git = "https://github.com/agritheory/test_utils.git" }
+[tool.bench.frappe-dependencies]
+frappe = ">=15.0.0,<16.0.0"
+erpnext = ">=15.0.0,<16.0.0"
+
+[tool.bench.dev-dependencies]
+mypy = "~=1.15.0"
+pytest = "~=8.3.5"
+pytest-cov = "~=6.0.0"
+pytest-order = "~=1.2.1"
 
 [tool.pytest.ini_options]
 addopts = "--cov=communications --cov-report term-missing"
@@ -77,12 +81,12 @@ exclude_also = [
 ]
 
 [tool.semantic_release]
-version_toml = ["pyproject.toml:tool.poetry.version"]
+version_toml = ["pyproject.toml:project.version"]
 version_variables = [
     "communications/__init__.py:__version__"
 ]
 build_command = "echo 1"
 
 [tool.semantic_release.branches.version]
-match = "version-15"
+match = "version-(15|16)"
 
