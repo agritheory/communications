@@ -1,6 +1,7 @@
 {
 	"actions": [],
 	"allow_rename": 1,
+	"autoname": "field:webhook_name",
 	"creation": "2025-08-27 09:13:02.344385",
 	"doctype": "DocType",
 	"engine": "InnoDB",
@@ -29,7 +30,8 @@
 			"fieldtype": "Data",
 			"in_list_view": 1,
 			"label": "Name",
-			"reqd": 1
+			"reqd": 1,
+			"unique": 1
 		},
 		{
 			"fieldname": "webhook_url",
@@ -97,10 +99,11 @@
 	"grid_page_length": 50,
 	"index_web_pages_for_search": 1,
 	"links": [],
-	"modified": "2026-04-30 08:49:06.685456",
+	"modified": "2026-04-30 09:04:00.335291",
 	"modified_by": "Administrator",
 	"module": "Communications",
 	"name": "Teams Webhook URL",
+	"naming_rule": "By fieldname",
 	"owner": "Administrator",
 	"permissions": [
 		{
