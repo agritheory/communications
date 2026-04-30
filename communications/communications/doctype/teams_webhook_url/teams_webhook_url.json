@@ -5,6 +5,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "webhook_settings_section",
   "webhook_settings_column",
   "webhook_name",
   "webhook_url",
@@ -21,8 +22,7 @@
  "fields": [
   {
    "fieldname": "webhook_settings_column",
-   "fieldtype": "Column Break",
-   "label": "Webhook Settings"
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "webhook_name",
@@ -87,12 +87,17 @@
    "fieldname": "service_url",
    "fieldtype": "Data",
    "label": "Bot Framework Service URL"
+  },
+  {
+   "fieldname": "webhook_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Webhook Settings"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-07 09:05:03.824362",
+ "modified": "2026-04-30 08:48:06.685456",
  "modified_by": "Administrator",
  "module": "Communications",
  "name": "Teams Webhook URL",
