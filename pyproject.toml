@@ -18,7 +18,6 @@ changelog = "https://github.com/agritheory/communications/CHANGELOG.md"
 documentation = "https://github.com/agritheory/communications/tree/version-15/docs"
 issues = "https://github.com/agritheory/communications/issues"
 
-
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -91,3 +90,6 @@ build_command = "echo 1"
 [tool.semantic_release.branches.version]
 match = "version-(15|16)"
 
+[tool.codespell]
+skip = "CHANGELOG.md"
+ignore-words-list = "notin,Greif"
