@@ -1,65 +1,109 @@
 {
 	"actions": [],
 	"allow_rename": 1,
+	"autoname": "field:webhook_name",
 	"creation": "2025-08-27 09:13:02.344385",
 	"doctype": "DocType",
 	"engine": "InnoDB",
 	"field_order": [
+		"webhook_settings_section",
 		"webhook_settings_column",
 		"webhook_name",
 		"webhook_url",
-		"column_break_ghmx",
-		"client_id",
+		"show_document_link",
+		"column_break_1",
+		"tenant_domain",
+		"bot_config_section",
+		"bot_app_id",
+		"bot_app_secret",
+		"column_break_bot",
 		"tenant_id",
-		"client_secret"
+		"service_url"
 	],
 	"fields": [
+		{
+			"fieldname": "webhook_settings_column",
+			"fieldtype": "Column Break"
+		},
 		{
 			"fieldname": "webhook_name",
 			"fieldtype": "Data",
 			"in_list_view": 1,
 			"label": "Name",
-			"reqd": 1
+			"reqd": 1,
+			"unique": 1
 		},
 		{
 			"fieldname": "webhook_url",
 			"fieldtype": "Data",
 			"in_list_view": 1,
-			"label": "Webhook URL"
+			"label": "Webhook URL (for Channel messages)"
 		},
 		{
-			"fieldname": "column_break_ghmx",
-			"fieldtype": "Column Break",
-			"label": "Graph Settings"
+			"default": "1",
+			"fieldname": "show_document_link",
+			"fieldtype": "Check",
+			"label": "Show link to document"
 		},
 		{
-			"fieldname": "client_id",
+			"fieldname": "column_break_1",
+			"fieldtype": "Column Break"
+		},
+		{
+			"description": "Azure AD tenant domain (e.g., contoso.onmicrosoft.com) - used to construct user UPN",
+			"fieldname": "tenant_domain",
 			"fieldtype": "Data",
-			"label": "Client ID"
+			"label": "Tenant Domain"
 		},
 		{
+			"fieldname": "bot_config_section",
+			"fieldtype": "Section Break",
+			"label": "Bot Framework Configuration"
+		},
+		{
+			"description": "Bot App ID from Azure Bot Service",
+			"fieldname": "bot_app_id",
+			"fieldtype": "Data",
+			"label": "Bot App ID"
+		},
+		{
+			"description": "Bot App Secret from Azure Bot Service",
+			"fieldname": "bot_app_secret",
+			"fieldtype": "Password",
+			"label": "Bot App Secret",
+			"length": 255
+		},
+		{
+			"fieldname": "column_break_bot",
+			"fieldtype": "Column Break"
+		},
+		{
+			"description": "Azure AD Tenant ID (GUID)",
 			"fieldname": "tenant_id",
 			"fieldtype": "Data",
 			"label": "Tenant ID"
 		},
 		{
-			"fieldname": "client_secret",
-			"fieldtype": "Password",
-			"label": "Client Secret"
+			"default": "https://smba.trafficmanager.net/teams/",
+			"description": "Bot Framework service URL (default: Teams)",
+			"fieldname": "service_url",
+			"fieldtype": "Data",
+			"label": "Bot Framework Service URL"
 		},
 		{
-			"fieldname": "webhook_settings_column",
-			"fieldtype": "Column Break",
+			"fieldname": "webhook_settings_section",
+			"fieldtype": "Section Break",
 			"label": "Webhook Settings"
 		}
 	],
 	"grid_page_length": 50,
 	"index_web_pages_for_search": 1,
 	"links": [],
-	"modified": "2025-08-27 09:24:35.136698",
+	"modified": "2026-04-30 09:04:00.335291",
 	"modified_by": "Administrator",
 	"module": "Communications",
 	"name": "Teams Webhook URL",
+	"naming_rule": "By fieldname",
 	"owner": "Administrator",
 	"permissions": [
 		{

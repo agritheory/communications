@@ -5,6 +5,65 @@ For license information, please see license.txt-->
 
 <!-- version list -->
 
+## v15.5.0 (2026-04-30)
+
+### Bug Fixes
+
+- Autoname
+  ([`df3a13e`](https://github.com/agritheory/communications/commit/df3a13ec2a994be5d9ab5a7b13129c606e358823))
+
+- Layout
+  ([`fe4e0a2`](https://github.com/agritheory/communications/commit/fe4e0a2bd797327d281d95c5b7b00b8b6ccdef13))
+
+- Layout
+  ([`8b25ec1`](https://github.com/agritheory/communications/commit/8b25ec1596a530a279c57a2286488589e12ced7c))
+
+### Chores
+
+- Rm plans
+  ([`e5cae1c`](https://github.com/agritheory/communications/commit/e5cae1caf3c13c2429a7d0bc820881b6239e19e7))
+
+### Features
+
+- Teams notifier via bot network
+  ([`49735c6`](https://github.com/agritheory/communications/commit/49735c65ea97133c17bf516e99f4b6a13f927e5d))
+
+
+## v15.4.0 (2026-04-12)
+
+### Features
+
+- Add query params to calendar for more interactive appointment scheduling
+  ([`eeb2646`](https://github.com/agritheory/communications/commit/eeb26469701d40125969848d5ae1515a802e5dc5))
+
+
+## v15.3.0 (2026-04-08)
+
+### Chores
+
+- Clean up tests
+  ([`41ab52a`](https://github.com/agritheory/communications/commit/41ab52a40743aa7b61dd7648b89a5cf11e02ce95))
+
+- Update precommit
+  ([`4013dcb`](https://github.com/agritheory/communications/commit/4013dcbcb1fbec7614cbedfb356502fe1e160851))
+
+- Update pyproject and precommit
+  ([`5901cfc`](https://github.com/agritheory/communications/commit/5901cfc4ae2abfa6fe5c75ad2ec00810493fe205))
+
+### Documentation
+
+- Update docs
+  ([`8437c60`](https://github.com/agritheory/communications/commit/8437c60e1f3ac6c40a3bf653c57d639d8bd72b9c))
+
+### Features
+
+- Calendar timezone bug fixes
+  ([`df00e19`](https://github.com/agritheory/communications/commit/df00e19e7ea5a0a813810ed2062110468c5857d5))
+
+- Port public calendar into communciations
+  ([`1c25e7f`](https://github.com/agritheory/communications/commit/1c25e7f6440105bb1399404e21f4e40d64a97ee6))
+
+
 ## v15.2.0 (2025-12-19)
 
 ### Features

@@ -5,6 +5,12 @@ For license information, please see license.txt-->
 
 Messaging and telephony extensions for Frappe
 
+### Documentation
+
+- [Public calendar, scheduling, RSVP, notifications](docs/calendar.md)
+- [Video conferencing, Appointment Settings, Zoom / Google Meet](docs/video-conferencing.md)
+- [Slack/Teams Notification channels, assignment patch, phone helpers](docs/integrations.md)
+
 #### License
 
 MIT
