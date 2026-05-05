@@ -98,7 +98,7 @@ doc_events = {
 
 scheduler_events = {
 	"cron": {
-		"* * * * *": [
+		"*/5 * * * *": [
 			"communications.notification_scheduler.background_jobs.process_notification_windows"
 		]
 	},
@@ -117,7 +117,6 @@ scheduler_events = {
 override_whitelisted_methods = {
 	"frappe.desk.form.assign_to.add": "communications.communications.overrides.assignment.add"
 }
-# before_tests = "communications.install.before_tests"
 
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "communications.event.get_events"

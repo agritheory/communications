@@ -6,12 +6,14 @@ from typing import Any
 import pytz
 
 import frappe
-from frappe.model.document import Document
 from frappe.utils import now_datetime
 
 from communications.notification_scheduler.window_manager import WindowManager
 from communications.notification_scheduler.dispatcher import Dispatcher
 from communications.notification_scheduler.digest_builder import DigestBuilder
+from communications.communications.doctype.notification_window_settings.notification_window_settings import (
+	NotificationWindowSettings,
+)
 
 
 class DeliveryRestrictions:
@@ -51,7 +53,7 @@ class DeliveryRestrictions:
 	@staticmethod
 	def is_within_delivery_hours(user: str | None = None) -> bool:
 		try:
-			config = frappe.get_single("Notification Window Settings").get_config()
+			config = NotificationWindowSettings.get_config()
 
 			if not config.enabled:
 				return True
@@ -79,7 +81,7 @@ class DeliveryRestrictions:
 	@staticmethod
 	def get_next_delivery_time(user: str | None = None):
 		try:
-			config = frappe.get_single("Notification Window Settings").get_config()
+			config = NotificationWindowSettings.get_config()
 			timezone = config.time_zone
 
 			if user:
@@ -108,7 +110,16 @@ class BatchProcessor:
 					notifications = frappe.get_all(
 						"Assignment Notification Queue",
 						filters={"assigned_to": user, "window_key": window_key, "status": "Queued"},
-						fields=["name", "bypass_batching", "reference_doctype", "reference_name"],
+						fields=[
+							"name",
+							"bypass_batching",
+							"reference_doctype",
+							"reference_name",
+							"assigned_to",
+							"description",
+							"assigned_by",
+							"assignment_date",
+						],
 					)
 
 					if not notifications:
@@ -130,10 +141,12 @@ class BatchProcessor:
 					if batch_notifications:
 						if DeliveryRestrictions.is_within_delivery_hours(user):
 							BatchProcessor.create_and_send_digest(user, batch_notifications)
+							WindowManager.clear_window(user)
 						else:
 							BatchProcessor.reschedule_notifications(batch_notifications)
-
-					WindowManager.clear_window(user)
+							# do NOT clear — reschedule created a new window for this user
+					else:
+						WindowManager.clear_window(user)
 
 				except Exception as e:
 					frappe.log_error(
@@ -147,7 +160,7 @@ class BatchProcessor:
 	@staticmethod
 	def create_and_send_digest(user: str, notifications: list[dict]):
 		try:
-			config = frappe.get_single("Notification Window Settings").get_config()
+			config = NotificationWindowSettings.get_config()
 			max_size = config.max_digest_size
 			chunks = [notifications[i : i + max_size] for i in range(0, len(notifications), max_size)]
 
@@ -178,18 +191,19 @@ class BatchProcessor:
 	@staticmethod
 	def reschedule_notifications(notifications: list[dict[str, Any]]):
 		try:
-			grouped: dict[str, list[Document]] = {}
+			grouped: dict[str, list[str]] = {}
 			for item in notifications:
-				doc = frappe.get_doc("Assignment Notification Queue", item["name"])
-				grouped.setdefault(doc.assigned_to, []).append(doc)
+				grouped.setdefault(item["assigned_to"], []).append(item["name"])
 
-			for user, docs in grouped.items():
+			for user, names in grouped.items():
 				next_start = DeliveryRestrictions.get_next_delivery_time(user)
 				new_window_key = WindowManager.schedule_window(user, next_start)
-				for doc in docs:
-					doc.window_key = new_window_key
-					doc.status = "Queued"
-					doc.save(ignore_permissions=True)
+				for name in names:
+					frappe.db.set_value(
+						"Assignment Notification Queue",
+						name,
+						{"window_key": new_window_key, "status": "Queued"},
+					)
 
 			frappe.db.commit()
 		except Exception as e:

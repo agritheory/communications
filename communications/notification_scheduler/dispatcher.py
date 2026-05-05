@@ -8,6 +8,9 @@ from frappe.desk.doctype.notification_log.notification_log import (
 	get_title,
 	get_title_html,
 )
+from communications.communications.doctype.notification_window_settings.notification_window_settings import (
+	NotificationWindowSettings,
+)
 
 
 class Dispatcher:
@@ -25,6 +28,7 @@ class Dispatcher:
 				message=digest_content["html"],
 				reference_doctype="Assignment Notification Queue",
 				reference_name=notifications[0]["name"] if notifications else None,
+				now=frappe.flags.in_test,
 			)
 			return True
 
@@ -36,16 +40,14 @@ class Dispatcher:
 	def send_individual_notification(notification_name: str) -> bool:
 		try:
 			doc = frappe.get_doc("Assignment Notification Queue", notification_name)
-			doc.status = "Processing"
-			doc.save()
+			frappe.db.set_value("Assignment Notification Queue", notification_name, "status", "Processing")
 
 			user_email = frappe.db.get_value("User", doc.assigned_to, "email")
 			if not user_email:
-				doc.status = "Failed"
-				doc.save()
+				frappe.db.set_value("Assignment Notification Queue", notification_name, "status", "Failed")
 				return False
 
-			config = frappe.get_single("Notification Window Settings").get_config()
+			config = NotificationWindowSettings.get_config()
 			template = config.individual_template
 
 			if template:
@@ -91,10 +93,11 @@ class Dispatcher:
 					header=[header, "orange"],
 					now=frappe.flags.in_test,
 				)
-			doc.status = "Sent"
-			doc.processed_at = now_datetime()
-			doc.notification_sent = 1
-			doc.save()
+			frappe.db.set_value(
+				"Assignment Notification Queue",
+				notification_name,
+				{"status": "Sent", "processed_at": now_datetime(), "notification_sent": 1},
+			)
 			return True
 
 		except Exception as e:

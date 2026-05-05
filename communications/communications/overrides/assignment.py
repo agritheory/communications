@@ -7,6 +7,9 @@ from frappe.desk.form.document_follow import follow_document
 from frappe.desk.form.assign_to import get, notify_assignment, format_message_for_assign_to
 from communications.notification_scheduler.window_manager import WindowManager
 from communications.notification_scheduler.utils import FallbackHandler
+from communications.communications.doctype.notification_window_settings.notification_window_settings import (
+	NotificationWindowSettings,
+)
 
 
 @frappe.whitelist()
@@ -85,7 +88,7 @@ def add(args=None, *, ignore_permissions=False):
 				follow_document(args["doctype"], args["name"], assign_to)
 
 			# ============ CUSTOM NOTIFICATION LOGIC ============
-			config = frappe.get_single("Notification Window Settings").get_config()
+			config = NotificationWindowSettings.get_config()
 			if config.enabled:
 				try:
 					queue_assignment_notification(
@@ -122,12 +125,16 @@ def add(args=None, *, ignore_permissions=False):
 	if shared_with_users:
 		user_list = format_message_for_assign_to(shared_with_users)
 		frappe.msgprint(
-			_("Shared with the following Users with Read access:{0}").format(user_list, alert=True)
+			_("Shared with the following Users with Read access:{0}").format(user_list),
+			alert=True,
 		)
 
 	if users_with_duplicate_todo:
 		user_list = format_message_for_assign_to(users_with_duplicate_todo)
-		frappe.msgprint(_("Already in the following Users ToDo list:{0}").format(user_list, alert=True))
+		frappe.msgprint(
+			_("Already in the following Users ToDo list:{0}").format(user_list),
+			alert=True,
+		)
 
 	return get(args)
 

@@ -7,6 +7,10 @@ import frappe
 from frappe.utils import now_datetime, add_to_date, get_datetime
 import json
 
+from communications.communications.doctype.notification_window_settings.notification_window_settings import (
+	NotificationWindowSettings,
+)
+
 
 class WindowManager:
 
@@ -27,7 +31,7 @@ class WindowManager:
 
 	@staticmethod
 	def schedule_window(user: str, start_time) -> str:
-		config = frappe.get_single("Notification Window Settings").get_config()
+		config = NotificationWindowSettings.get_config()
 		start = start_time if isinstance(start_time, datetime) else get_datetime(start_time)
 		end = add_to_date(start, minutes=config.collection_window_minutes)
 		window_key = f"{user}_{start.strftime('%Y%m%d_%H%M%S')}"
@@ -56,7 +60,7 @@ class WindowManager:
 	@staticmethod
 	def set_window_data(user: str, data: dict):
 		try:
-			config = frappe.get_single("Notification Window Settings").get_config()
+			config = NotificationWindowSettings.get_config()
 			redis_key = f"{WindowManager.REDIS_KEY_PREFIX}:{user}"
 			frappe.cache().set_value(
 				redis_key,
@@ -82,25 +86,34 @@ class WindowManager:
 	@staticmethod
 	def get_expired_windows() -> list:
 		try:
-			cache = frappe.cache()
-			expired_windows = []
 			now = now_datetime()
+			# Query DB for distinct user/window_key pairs that have queued notifications.
+			# This avoids fragile Redis key scanning and gracefully handles TTL expiry.
+			rows = frappe.get_all(
+				"Assignment Notification Queue",
+				filters={"status": "Queued"},
+				fields=["assigned_to", "window_key"],
+			)
 
-			for full_key in cache.get_keys(f"{WindowManager.REDIS_KEY_PREFIX}:*") or []:
-				try:
-					key = full_key.decode("utf-8") if isinstance(full_key, bytes) else full_key
-					if "|" in key:
-						key = key.split("|", 1)[1]
-					data = cache.get_value(key)
-					if not data:
-						continue
+			seen_keys: set[tuple] = set()
+			expired_windows = []
 
-					window_data = json.loads(data) if isinstance(data, str) else data
-					if now > get_datetime(window_data["window_end"]):
-						expired_windows.append(window_data)
-				except Exception as e:
-					frappe.log_error(f"Error processing window {key}: {str(e)}", "Window Manager")
+			for row in rows:
+				key = (row.assigned_to, row.window_key)
+				if key in seen_keys:
 					continue
+				seen_keys.add(key)
+
+				data = WindowManager.get_window_data(row.assigned_to)
+				if not data:
+					# Redis TTL expired before window was processed — treat as expired
+					expired_windows.append(
+						{"window_key": row.window_key, "user": row.assigned_to, "window_end": now.isoformat()}
+					)
+					continue
+
+				if get_datetime(data["window_end"]) < now:
+					expired_windows.append(data)
 
 			return expired_windows
 		except Exception as e:

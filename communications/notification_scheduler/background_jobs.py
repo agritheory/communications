@@ -5,11 +5,14 @@ import frappe
 from frappe.utils import add_to_date, now_datetime
 
 from communications.notification_scheduler.batch_processor import BatchProcessor
+from communications.communications.doctype.notification_window_settings.notification_window_settings import (
+	NotificationWindowSettings,
+)
 
 
 def process_notification_windows():
 	try:
-		config = frappe.get_single("Notification Window Settings").get_config()
+		config = NotificationWindowSettings.get_config()
 		if not config.enabled:
 			return
 
@@ -22,13 +25,12 @@ def process_notification_windows():
 def cleanup_old_queue_entries():
 	try:
 		cutoff_date = add_to_date(now_datetime(), days=-30)
-		frappe.db.sql(
-			"""
-            DELETE FROM `tabAssignment Notification Queue`
-            WHERE status IN ('Sent', 'Failed')
-            AND processed_at < %s
-        """,
-			cutoff_date,
+		frappe.db.delete(
+			"Assignment Notification Queue",
+			{
+				"status": ["in", ["Sent", "Failed"]],
+				"processed_at": ["<", cutoff_date],
+			},
 		)
 		frappe.db.commit()
 	except Exception as e:

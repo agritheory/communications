@@ -5,7 +5,10 @@ import json
 from urllib.parse import urlencode
 from typing import Any
 import frappe
-from frappe.utils import get_url
+from frappe.utils import get_url, escape_html
+from communications.communications.doctype.notification_window_settings.notification_window_settings import (
+	NotificationWindowSettings,
+)
 
 
 class DigestBuilder:
@@ -39,7 +42,7 @@ class DigestBuilder:
 				section = {
 					"doctype": doctype,
 					"count": len(items),
-					"items": DigestBuilder._format_items(items),
+					"items": DigestBuilder.format_items(items),
 					"report_url": report_url,
 				}
 				sections.append(section)
@@ -49,7 +52,7 @@ class DigestBuilder:
 				"total_count": total_count,
 				"sections": sections,
 				"subject": f"You have {total_count} new assignment{'s' if total_count > 1 else ''}",
-				"html": DigestBuilder._render_html(user, total_count, sections),
+				"html": DigestBuilder.render_html(user, total_count, sections),
 			}
 
 		except Exception as e:
@@ -57,21 +60,21 @@ class DigestBuilder:
 			raise
 
 	@staticmethod
-	def _format_items(items: list[dict]) -> list[dict]:
+	def format_items(items: list[dict]) -> list[dict]:
 		formatted = []
 
 		for item in items:
 			try:
-				doc = frappe.get_doc("Assignment Notification Queue", item["name"])
-				doc_url = get_url(f"/app/{frappe.scrub(doc.reference_doctype)}/{doc.reference_name}")
-				formatted_item = {
-					"name": doc.reference_name,
-					"url": doc_url,
-					"description": doc.description or "",
-					"assigned_by": doc.assigned_by,
-					"assignment_date": doc.assignment_date,
-				}
-				formatted.append(formatted_item)
+				doc_url = get_url(f"/app/{frappe.scrub(item['reference_doctype'])}/{item['reference_name']}")
+				formatted.append(
+					{
+						"name": item["reference_name"],
+						"url": doc_url,
+						"description": item.get("description") or "",
+						"assigned_by": item.get("assigned_by"),
+						"assignment_date": item.get("assignment_date"),
+					}
+				)
 			except Exception as e:
 				frappe.log_error(f"Error formatting item {item.get('name')}: {str(e)}", "Digest Builder")
 				continue
@@ -79,23 +82,23 @@ class DigestBuilder:
 		return formatted
 
 	@staticmethod
-	def _render_html(user: str, total_count: int, sections: list[dict]) -> str:
+	def render_html(user: str, total_count: int, sections: list[dict]) -> str:
 		try:
-			config = frappe.get_single("Notification Window Settings").get_config()
+			config = NotificationWindowSettings.get_config()
 			if config.batch_template:
 				email_template = frappe.get_doc("Email Template", config.batch_template)
 				context = {"user": user, "total_count": total_count, "sections": sections}
 				return frappe.render_template(email_template.response_, context)
 
-			return DigestBuilder._default_template(user, total_count, sections)
+			return DigestBuilder.default_template(user, total_count, sections)
 
 		except Exception as e:
 			frappe.log_error(f"Error rendering HTML: {str(e)}", "Digest Builder")
-			return DigestBuilder._default_template(user, total_count, sections)
+			return DigestBuilder.default_template(user, total_count, sections)
 
 	@staticmethod
-	def _default_template(user: str, total_count: int, sections: list[dict]) -> str:
-		user_name = frappe.db.get_value("User", user, "full_name") or user
+	def default_template(user: str, total_count: int, sections: list[dict]) -> str:
+		user_name = escape_html(frappe.db.get_value("User", user, "full_name") or user)
 
 		html = f"""
         <div style="font-family: monospace; max-width: 600px; margin: 0 auto; padding: 20px; background: #fafafa;">

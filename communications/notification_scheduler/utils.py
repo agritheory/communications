@@ -29,12 +29,12 @@ class FallbackHandler:
 
 		except Exception as e:
 			frappe.log_error(f"Error in fallback notification: {str(e)}", "Fallback Handler")
-			FallbackHandler._send_standard_notification(
+			FallbackHandler.send_standard_notification(
 				assigned_to, reference_doctype, reference_name, description
 			)
 
 	@staticmethod
-	def _send_standard_notification(
+	def send_standard_notification(
 		assigned_to: str, reference_doctype: str, reference_name: str, description: str | None = None
 	):
 		try:

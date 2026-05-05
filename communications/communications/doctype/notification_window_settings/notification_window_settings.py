@@ -1,6 +1,7 @@
 # Copyright (c) 2025, AgriTheory and contributors
 # For license information, please see license.txt
 
+import pytz
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -14,11 +15,20 @@ class NotificationWindowSettings(Document):
 		if self.delivery_end_hour < 0 or self.delivery_end_hour > 23:
 			frappe.throw(_("End hour must be between 0 and 23"))
 
+		if self.delivery_start_hour == self.delivery_end_hour:
+			frappe.throw(_("Delivery start and end hours cannot be the same"))
+
 		if self.collection_window_minutes < 1:
 			frappe.throw(_("Collection window must be at least 1 minute"))
 
 		if self.max_digest_size < 1:
 			frappe.throw(_("Max digest size must be at least 1"))
+
+		if self.time_zone:
+			try:
+				pytz.timezone(self.time_zone)
+			except pytz.exceptions.UnknownTimeZoneError:
+				frappe.throw(_("Invalid timezone: {0}").format(self.time_zone))
 
 	@staticmethod
 	def get_config():
@@ -47,7 +57,7 @@ class NotificationWindowSettings(Document):
 			except Exception:
 				config = frappe._dict(
 					{
-						"enabled": True,
+						"enabled": False,
 						"collection_window_minutes": 15,
 						"max_digest_size": 50,
 						"delivery_start_hour": 8,
