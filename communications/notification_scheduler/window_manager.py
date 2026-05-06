@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Any
 import frappe
 from frappe.utils import now_datetime, add_to_date, get_datetime
-import json
 
 from communications.communications.doctype.notification_window_settings.notification_window_settings import (
 	NotificationWindowSettings,
@@ -50,9 +49,7 @@ class WindowManager:
 	def get_window_data(user: str) -> dict[str, Any] | None:
 		try:
 			redis_key = f"{WindowManager.REDIS_KEY_PREFIX}:{user}"
-			data = frappe.cache().get_value(redis_key)
-			if data:
-				return json.loads(data) if isinstance(data, str) else data
+			return frappe.cache().get_value(redis_key)
 		except Exception as e:
 			frappe.log_error(f"Error getting window data: {str(e)}", "Window Manager")
 		return None
@@ -60,13 +57,11 @@ class WindowManager:
 	@staticmethod
 	def set_window_data(user: str, data: dict):
 		try:
-			config = NotificationWindowSettings.get_config()
 			redis_key = f"{WindowManager.REDIS_KEY_PREFIX}:{user}"
-			frappe.cache().set_value(
-				redis_key,
-				json.dumps(data, default=str),
-				expires_in_sec=(config.collection_window_minutes * 60) + 3600,  # 1 hour buffer
-			)
+			# Intentionally no expires_in_sec: Frappe's set_value with expiry skips
+			# frappe.local.cache, causing stale None reads until the process restarts.
+			# Window expiry is managed by window_end in the data + explicit clear_window().
+			frappe.cache().set_value(redis_key, data)
 		except Exception as e:
 			frappe.log_error(f"Error setting window data: {str(e)}", "Window Manager")
 

@@ -98,7 +98,7 @@ doc_events = {
 
 scheduler_events = {
 	"cron": {
-		"*/5 * * * *": [
+		"* * * * *": [
 			"communications.notification_scheduler.background_jobs.process_notification_windows"
 		]
 	},
