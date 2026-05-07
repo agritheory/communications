@@ -40,10 +40,12 @@ class NotificationWindowSettings(Document):
 				config = frappe._dict(
 					{
 						"enabled": doc.enabled,
-						"collection_window_minutes": doc.collection_window_minutes or 15,
-						"max_digest_size": doc.max_digest_size or 50,
-						"delivery_start_hour": doc.delivery_start_hour or 8,
-						"delivery_end_hour": doc.delivery_end_hour or 20,
+						"collection_window_minutes": doc.collection_window_minutes
+						if doc.collection_window_minutes is not None
+						else 15,
+						"max_digest_size": doc.max_digest_size if doc.max_digest_size is not None else 50,
+						"delivery_start_hour": doc.delivery_start_hour if doc.delivery_start_hour is not None else 8,
+						"delivery_end_hour": doc.delivery_end_hour if doc.delivery_end_hour is not None else 20,
 						"time_zone": doc.time_zone or "UTC",
 						"bypass_batching_for_priority": doc.bypass_batching_for_priority,
 						"priority_doctypes": [
