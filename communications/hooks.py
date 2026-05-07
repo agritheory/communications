@@ -20,9 +20,11 @@ app_license = "mit"
 # 	}
 # ]
 
-# app_include_css = "/assets/communications/css/communications.css"
+# Desk JS: there is no communications.bundle.js entry. Phone ControlData + formatter ship as
+# public/js/teams.bundle.js (esbuild discovers *.bundle.js under public/). Website calendar uses
+# web_include_js below, not app_include_js.
 app_include_js = [
-	"communications.bundle.js",
+	"teams.bundle.js",
 ]
 app_include_css = ["/assets/communications/css/public_calendar.css"]
 
@@ -96,10 +98,6 @@ website_route_rules = [
 	{"from_route": "/sign/<name>", "to_route": "electronic_signature/[name]"},
 	{"from_route": "/sign", "to_route": "electronic_signature"},
 ]
-
-doctype_js = {
-	"Electronic Signature": "public/js/electronic_signature.js",
-}
 
 doc_events = {
 	"Event": {

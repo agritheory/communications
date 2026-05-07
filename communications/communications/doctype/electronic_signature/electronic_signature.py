@@ -79,7 +79,15 @@ class ElectronicSignature(Document):
 			}
 			if frappe.db.has_column("Electronic Signature", "letter_head") and self.get("letter_head"):
 				kwargs["letterhead"] = self.letter_head
-			raw = frappe.get_print(self.reference_doctype, self.reference_name, **kwargs)
+			# Portal signers may read the Electronic Signature but not the referenced document.
+			# frappe.get_print -> printview validates print permission on the reference doc under
+			# the current session user, which would hide the agreement body for external signers.
+			prev_ignore_print = bool(getattr(frappe.flags, "ignore_print_permissions", None))
+			frappe.flags.ignore_print_permissions = True
+			try:
+				raw = frappe.get_print(self.reference_doctype, self.reference_name, **kwargs)
+			finally:
+				frappe.flags.ignore_print_permissions = prev_ignore_print
 			return strip_embedded_print_toolbar_html(raw)
 		except Exception:
 			frappe.log_error(

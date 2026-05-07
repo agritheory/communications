@@ -109,6 +109,29 @@ def test_has_permission_denies_non_signer_customer(signature_email_template):
 	assert has_electronic_signature_permission(es, user=other.name, ptype="read") is False
 
 
+def test_document_html_renders_for_signer_without_reference_doc_perm(signature_email_template):
+	"""Signers must see embedded print HTML even when they cannot read the referenced doc."""
+	frappe.set_user("Administrator")
+	note = frappe.new_doc("Note")
+	note.title = "Agreement body"
+	note.public = 0
+	note.insert()
+
+	es, email, contact_name = make_electronic_signature_with_signers()
+	es.reference_doctype = "Note"
+	es.reference_name = note.name
+	es.save(ignore_permissions=True)
+
+	frappe.set_user(email)
+	doc = frappe.get_doc("Electronic Signature", es.name)
+	assert doc.has_permission("read") is True
+	assert frappe.has_permission("Note", "read", doc=frappe.get_doc("Note", note.name)) is False
+	html = doc.document_html
+	assert html and "print-format-gutter" in html
+
+	frappe.set_user("Administrator")
+
+
 def test_fetch_signature_invitation_email(signature_email_template):
 	es, email, contact_name = make_electronic_signature_with_signers("Draft")
 	frappe.set_user("Administrator")

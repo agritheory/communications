@@ -1,7 +1,7 @@
 // Copyright (c) 2025, AgriTheory and contributors
 // For license information, please see license.txt
 
-frappe.provide('public_calendar')
+const public_calendar = frappe.provide('public_calendar')
 
 public_calendar.Calendar = class Calendar {
 	constructor(wrapper, options) {

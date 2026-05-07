@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "naming_series:",
  "creation": "2026-04-16 12:00:00",
@@ -51,12 +52,16 @@
   {
    "fieldname": "reference_doctype",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Reference DocType",
    "options": "DocType"
   },
   {
    "fieldname": "reference_name",
    "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Reference Name",
    "options": "reference_doctype"
   },
@@ -87,6 +92,7 @@
   {
    "fieldname": "print_format",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Print Format",
    "options": "Print Format"
   },
@@ -106,9 +112,8 @@
   }
  ],
  "grid_page_length": 50,
- "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-22 12:00:00.000000",
+ "modified": "2026-05-07 09:46:46.137864",
  "modified_by": "Administrator",
  "module": "Communications",
  "name": "Electronic Signature",
@@ -156,5 +161,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
+ "title_field": "title",
  "track_changes": 1
 }
