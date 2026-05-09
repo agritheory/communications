@@ -7,7 +7,13 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 import frappe
-from frappe.email.doctype.notification.notification import Notification, get_context
+from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
+from frappe.email.doctype.notification.notification import (
+	Notification,
+	get_context,
+	get_reference_doctype,
+	get_reference_name,
+)
 from frappe.utils.jinja import validate_template
 from frappe.utils import get_url_to_form
 
@@ -29,6 +35,31 @@ def teams_dm_error_body(recipient: str, exc: BaseException) -> str:
 	else:
 		lines.extend([str(exc), "", frappe.get_traceback()])
 	return "\n".join(lines)
+
+
+def send_slack_or_teams_dm_notification(
+	notification_name: str, doc_type: str, doc_name: str
+) -> None:
+	"""Background job: load Notification + document and send Slack DM or Teams DM."""
+	if frappe.flags.in_migrate:
+		return
+
+	alert = frappe.get_doc("Notification", notification_name)
+	doc = frappe.get_doc(doc_type, doc_name)
+	context = {"doc": doc, "alert": alert, "comments": None}
+	if doc.get("_comments"):
+		context["comments"] = json.loads(doc.get("_comments"))
+
+	if alert.is_standard:
+		alert.load_standard_properties(context)
+
+	try:
+		if alert.channel == "Slack DM":
+			alert.send_a_slack_dm_msg(doc, context)
+		elif alert.channel == "Teams DM":
+			alert.send_a_teams_dm_msg(doc, context)
+	except Exception as e:
+		alert.log_error("Failed to send Notification", e)
 
 
 class CommunicationsNotification(Notification):
@@ -55,6 +86,9 @@ class CommunicationsNotification(Notification):
 			super().send(doc)
 			return
 
+		if frappe.flags.in_migrate:
+			return
+
 		context = get_context(doc)
 		context = {"doc": doc, "alert": self, "comments": None}
 		if doc.get("_comments"):
@@ -62,13 +96,34 @@ class CommunicationsNotification(Notification):
 
 		if self.is_standard:
 			self.load_standard_properties(context)
-		try:
-			if self.channel == "Slack DM":
-				self.send_a_slack_dm_msg(doc, context)
-			elif self.channel == "Teams DM":
-				self.send_a_teams_dm_msg(doc, context)
 
-			if self.channel == "System Notification" or self.send_system_notification:
+		enqueued = False
+		if not frappe.flags.in_test:
+			try:
+				frappe.enqueue(
+					send_slack_or_teams_dm_notification,
+					queue="default",
+					enqueue_after_commit=True,
+					job_name=f"dm-notification:{self.name}:{doc.doctype}:{doc.name}",
+					notification_name=self.name,
+					doc_type=doc.doctype,
+					doc_name=doc.name,
+				)
+				enqueued = True
+			except Exception as e:
+				frappe.log_error(
+					title="Failed to enqueue Slack/Teams DM notification",
+					message=f"{e}\n\n{frappe.get_traceback()}",
+				)
+
+		try:
+			if not enqueued:
+				if self.channel == "Slack DM":
+					self.send_a_slack_dm_msg(doc, context)
+				elif self.channel == "Teams DM":
+					self.send_a_teams_dm_msg(doc, context)
+
+			if self.send_system_notification:
 				self.create_system_notification(doc, context)
 		except Exception as e:
 			self.log_error("Failed to send Notification", e)
@@ -196,3 +251,29 @@ class CommunicationsNotification(Notification):
 				messaging_client.send_dm_to_user(email=recipient, message=body_content, content_type="html")
 			except Exception as e:
 				self.log_error(title=TEAMS_DM_LOG_TITLE, message=teams_dm_error_body(recipient, e))
+
+	def create_system_notification(self, doc, context):
+		"""Like Notification.create_system_notification; handles None subject (e.g. Teams DM without email subject)."""
+		subject = self.subject or ""
+		if "{" in subject:
+			subject = frappe.render_template(self.subject or "", context)
+
+		attachments = self.get_attachment(doc)
+
+		recipients, cc, bcc = self.get_list_of_recipients(doc, context)
+
+		users = recipients + cc + bcc
+
+		if not users:
+			return
+
+		notification_doc = {
+			"type": "Alert",
+			"document_type": get_reference_doctype(doc),
+			"document_name": get_reference_name(doc),
+			"subject": subject,
+			"from_user": doc.modified_by or doc.owner,
+			"email_content": frappe.render_template(self.message, context),
+			"attached_file": attachments and json.dumps(attachments[0]),
+		}
+		enqueue_create_notification(users, notification_doc)
