@@ -5,6 +5,14 @@ For license information, please see license.txt-->
 
 <!-- version list -->
 
+## v15.6.0 (2026-05-09)
+
+### Features
+
+- Enqueue dms
+  ([`9559f2c`](https://github.com/agritheory/communications/commit/9559f2c6d02991a148d1790c4d66380fb832f6b8))
+
+
 ## v15.5.0 (2026-04-30)
 
 ### Bug Fixes
