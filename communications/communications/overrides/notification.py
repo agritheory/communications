@@ -26,10 +26,36 @@ class CommunicationsNotification(Notification):
 		if self.event == "Value Change" and not self.value_changed:
 			frappe.throw(frappe._("Please specify which value field must be checked"))
 
+		rk = (getattr(self, "sendmail_route_key", None) or "").strip()
+		if rk:
+			from communications.communications.overrides.sendmail_routing import (
+				validate_route_key_or_throw,
+			)
+
+			validate_route_key_or_throw(rk)
+
 		# self.validate_forbidden_types()
 		self.validate_condition()
 		self.validate_standard()
 		frappe.cache().hdel("notifications", self.document_type)
+
+	def after_insert(self):
+		super().after_insert()
+		from communications.communications.overrides.sendmail import reconcile_notification_routes
+
+		reconcile_notification_routes()
+
+	def on_update(self):
+		super().on_update()
+		from communications.communications.overrides.sendmail import reconcile_notification_routes
+
+		reconcile_notification_routes()
+
+	def on_trash(self):
+		super().on_trash()
+		from communications.communications.overrides.sendmail import reconcile_notification_routes
+
+		reconcile_notification_routes()
 
 	def send(self, doc):
 		if self.channel not in ("Slack DM", "Teams DM"):

@@ -111,7 +111,7 @@ scheduler_events = {
 
 # ignore_links_on_delete = ["Communication", "ToDo"]
 
-# before_request = ["communications.utils.before_request"]
+before_request = ["communications.communications.overrides.sendmail.on_site_ready"]
 # after_request = ["communications.utils.after_request"]
 
 # before_job = ["communications.utils.before_job"]

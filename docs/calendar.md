@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Public Calendar Features
 
 <div class="byline">
-  Tyler Matteson 2026-03-04
+  Tyler Matteson 2026-04-06
 </div>
 
 
@@ -182,7 +182,7 @@ The schedule **`get_events`** method is whitelisted for **Guest**; the **`/sched
 
 ### Cancel appointment
 
-**Method:** `communications.communications.communications.api.cancel_appointment`
+**Method:** `communications.communications.api.cancel_appointment`
 
 **Parameters:**
 - `event` (str) - Event document name
@@ -240,7 +240,7 @@ This module was migrated from the `public_calendar` app. Python modules under th
 | `public_calendar.www.calendar` | `communications.www.calendar` |
 | `public_calendar.www.schedule` | `communications.www.schedule` |
 | `public_calendar.www.rsvp` | `communications.www.rsvp` |
-| `public_calendar.public_calendar.api` (if used) | `communications.communications.communications.api` |
+| `public_calendar.public_calendar.api` (if used) | `communications.communications.api` |
 
 ## Related documentation
 

@@ -3,6 +3,11 @@ For license information, please see license.txt-->
 
 # Desk notifications and chat integrations
 
+<div class="byline">
+  Tyler Matteson 2026-04-06
+</div>
+
+
 These features are not part of the public calendar; they extend **Notification** and desk behavior across the site.
 
 ## Notification DocType override
@@ -30,7 +35,7 @@ If an **enabled** **Notification** exists with **Document Type** = **ToDo**, ass
 
 ## Phone helpers
 
-**`communications.communications.communications`** exposes **`start_phone_call`** (whitelisted stub). **`validate_phone_number`** and **`validate_data_fields`** implement a North-American-style phone pattern and optional **Data** field checks; they are available for reuse. Core **`frappe.utils.validate_phone_number`** is **not** patched by default (see commented line in `communications/__init__.py`).
+**`communications.communications`** exposes **`start_phone_call`** (whitelisted stub). **`validate_phone_number`** and **`validate_data_fields`** implement a North-American-style phone pattern and optional **Data** field checks; they are available for reuse. Core **`frappe.utils.validate_phone_number`** is **not** patched by default (see commented line in `communications/__init__.py`).
 
 ## Related
 

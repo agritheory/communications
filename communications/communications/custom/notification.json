@@ -1,5 +1,15 @@
 {
-	"custom_fields": [],
+	"custom_fields": [
+		{
+			"name": "Notification-sendmail_route_key",
+			"fieldname": "sendmail_route_key",
+			"fieldtype": "Small Text",
+			"label": "Sendmail call-site key",
+			"description": "Registry key for sendmail routing (M:module|Q:qual, P:path|Q:qual, T:template, S:subject prefix). Must match generate_route_key_for_callable / bench probe output.",
+			"insert_after": "document_type",
+			"module": "Communications"
+		}
+	],
 	"doctype": "Notification",
 	"property_setters": [
 		{

@@ -12,3 +12,9 @@ from communications.communications.overrides.assign_to import (
 )  # noqa: E402
 
 assign_to.notify_assignment = custom_notify_assignment
+
+from communications.communications.overrides.sendmail import (
+	bootstrap as _bootstrap_sendmail_ov,
+)
+
+_bootstrap_sendmail_ov()
