@@ -44,7 +44,11 @@ repos:
         additional_dependencies: ['flake8-bugbear']
 
   - repo: https://github.com/agritheory/test_utils
+<<<<<<< HEAD
     rev: v1.25.0
+=======
+    rev: v1.25.1
+>>>>>>> c8ac71088305095d2328bf7ee723b0c6812cc0be
     hooks:
       - id: update_pre_commit_config
       - id: validate_frappe_project
