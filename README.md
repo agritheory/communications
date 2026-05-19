@@ -10,6 +10,7 @@ Messaging and telephony extensions for Frappe
 - [Public calendar, scheduling, RSVP, notifications](docs/calendar.md)
 - [Video conferencing, Appointment Settings, Zoom / Google Meet](docs/video-conferencing.md)
 - [Slack/Teams Notification channels, assignment patch, phone helpers](docs/integrations.md)
+- [Sendmail route overrides (`send_notification_email` scope)](docs/sendmail-routes.md)
 
 #### License
 

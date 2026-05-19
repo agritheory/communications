@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Desk notifications and chat integrations
 
 <div class="byline">
-  Tyler Matteson 2026-04-06
+  Tyler Matteson 2026-04-23
 </div>
 
 
@@ -27,6 +27,14 @@ Configure the credential DocTypes, then create **Notification** records with **C
 
 Bot Framework fields plus service URL, etc. Details and Azure permissions are in [teams_setup.md](./teams_setup.md).
 
+## Sendmail route overrides
+
+On app import, **`communications/__init__.py`** patches **`frappe.sendmail`** and **`send_notification_email`** so configured **Notification** records can replace selected Frappe emails (desk **Notification Log** emails: mentions, assignments, shares, energy points, alerts).
+
+**Important:** `send_notification_email` is one Frappe function for all Notification Log email types. Use **`sendmail_route_match`** (e.g. `{"notification_log_type": "Mention"}`) to narrow scope. Password reset and other site emails use different call sites and are not intercepted unless you configure them explicitly.
+
+Full scope, configuration, and examples: **[Sendmail route overrides](./sendmail-routes.md)**.
+
 ## Assignment notifications
 
 On app import, **`communications/__init__.py`** replaces **`frappe.desk.form.assign_to.notify_assignment`** with **`custom_notify_assignment`**.
@@ -39,5 +47,6 @@ If an **enabled** **Notification** exists with **Document Type** = **ToDo**, ass
 
 ## Related
 
+- [Sendmail route overrides](./sendmail-routes.md)
 - [Public Calendar Features](./calendar.md)
 - [Video conferencing](./video-conferencing.md)

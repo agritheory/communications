@@ -14,12 +14,13 @@ from frappe.email.doctype.notification.notification import (
 	get_reference_doctype,
 	get_reference_name,
 )
-from frappe.utils.jinja import validate_template
 from frappe.utils import get_url_to_form
+from frappe.utils.jinja import validate_template
 
 from communications.communications.doctype.teams_webhook_url.teams_webhook_url import (
 	TeamsMessagingError,
 )
+from communications.sendmail_routes import normalize_route_recipients
 
 # Error Log title field max 140 chars
 TEAMS_DM_LOG_TITLE = "Teams DM send failed"
@@ -37,8 +38,45 @@ def teams_dm_error_body(recipient: str, exc: BaseException) -> str:
 	return "\n".join(lines)
 
 
+def get_sendmail_route_locals():
+	route_recipients = getattr(frappe.local, "sendmail_route_recipients", None)
+	route_subject = getattr(frappe.local, "sendmail_route_subject", None)
+	route_message = getattr(frappe.local, "sendmail_route_message", None)
+	route_attachments = getattr(frappe.local, "sendmail_route_attachments", None)
+	route_extra = getattr(frappe.local, "sendmail_route_extra", None) or {}
+	return route_recipients, route_subject, route_message, route_attachments, route_extra
+
+
+def apply_sendmail_route_context(
+	context,
+	route_subject=None,
+	route_message=None,
+	route_extra=None,
+):
+	if route_subject:
+		context["sendmail_subject"] = route_subject
+	if route_message:
+		context["sendmail_message"] = route_message
+	if not route_extra:
+		return
+	if route_extra.get("docinfo") is not None:
+		context["sendmail_docinfo"] = route_extra.get("docinfo")
+	if route_extra.get("timeline") is not None:
+		context["sendmail_timeline"] = route_extra.get("timeline")
+	if route_extra.get("workflow_actions") is not None:
+		context["sendmail_workflow_actions"] = route_extra.get("workflow_actions")
+	if route_extra.get("workflow_message"):
+		context["sendmail_workflow_message"] = route_extra.get("workflow_message")
+
+
 def send_slack_or_teams_dm_notification(
-	notification_name: str, doc_type: str, doc_name: str
+	notification_name: str,
+	doc_type: str,
+	doc_name: str,
+	route_recipients: list | None = None,
+	route_subject: str | None = None,
+	route_message: str | None = None,
+	route_extra: dict | None = None,
 ) -> None:
 	"""Background job: load Notification + document and send Slack DM or Teams DM."""
 	if frappe.flags.in_migrate:
@@ -53,6 +91,16 @@ def send_slack_or_teams_dm_notification(
 	if alert.is_standard:
 		alert.load_standard_properties(context)
 
+	apply_sendmail_route_context(context, route_subject, route_message, route_extra)
+
+	if route_recipients:
+		frappe.local.sendmail_route_recipients = normalize_route_recipients(list(route_recipients))
+	if route_subject is not None:
+		frappe.local.sendmail_route_subject = route_subject
+	if route_message is not None:
+		frappe.local.sendmail_route_message = route_message
+	if route_extra:
+		frappe.local.sendmail_route_extra = route_extra
 	try:
 		if alert.channel == "Slack DM":
 			alert.send_a_slack_dm_msg(doc, context)
@@ -60,6 +108,9 @@ def send_slack_or_teams_dm_notification(
 			alert.send_a_teams_dm_msg(doc, context)
 	except Exception as e:
 		alert.log_error("Failed to send Notification", e)
+	finally:
+		frappe.local.sendmail_route_recipients = None
+		frappe.local.sendmail_route_extra = None
 
 
 class CommunicationsNotification(Notification):
@@ -81,6 +132,76 @@ class CommunicationsNotification(Notification):
 		self.validate_standard()
 		frappe.cache().hdel("notifications", self.document_type)
 
+	def send_an_email(self, doc, context):
+		"""Honor recipients/subject/body lifted from an intercepted frappe.sendmail call."""
+		from email.utils import formataddr
+
+		from frappe.core.doctype.communication.email import _make as make_communication
+
+		(
+			route_recipients,
+			route_subject,
+			route_message,
+			route_attachments,
+			route_extra,
+		) = get_sendmail_route_locals()
+		apply_sendmail_route_context(context, route_subject, route_message, route_extra)
+
+		subject = self.subject
+		if route_recipients and route_subject:
+			subject = route_subject
+		if "{" in (subject or ""):
+			subject = frappe.render_template(subject, context)
+
+		if route_attachments:
+			attachments = route_attachments
+		else:
+			attachments = self.get_attachment(doc)
+		if route_recipients:
+			recipients = list(route_recipients)
+			cc, bcc = [], []
+		else:
+			recipients, cc, bcc = self.get_list_of_recipients(doc, context)
+		if not (recipients or cc or bcc):
+			return
+
+		sender = None
+		message = frappe.render_template(self.message, context)
+		if self.sender and self.sender_email:
+			sender = formataddr((self.sender, self.sender_email))
+
+		communication = None
+		if doc.doctype != "Communication":
+			communication = make_communication(
+				doctype=get_reference_doctype(doc),
+				name=get_reference_name(doc),
+				content=message,
+				subject=subject,
+				sender=sender,
+				recipients=recipients,
+				communication_medium="Email",
+				send_email=False,
+				attachments=attachments,
+				cc=cc,
+				bcc=bcc,
+				communication_type="Automated Message",
+			).get("name")
+
+		frappe.sendmail(
+			recipients=recipients,
+			subject=subject,
+			sender=sender,
+			cc=cc,
+			bcc=bcc,
+			message=message,
+			reference_doctype=get_reference_doctype(doc),
+			reference_name=get_reference_name(doc),
+			attachments=attachments,
+			expose_recipients="header",
+			print_letterhead=((attachments and attachments[0].get("print_letterhead")) or False),
+			communication=communication,
+		)
+
 	def send(self, doc):
 		if self.channel not in ("Slack DM", "Teams DM"):
 			super().send(doc)
@@ -97,6 +218,8 @@ class CommunicationsNotification(Notification):
 		if self.is_standard:
 			self.load_standard_properties(context)
 
+		route_recipients, route_subject, route_message, _, route_extra = get_sendmail_route_locals()
+		apply_sendmail_route_context(context, route_subject, route_message, route_extra)
 		enqueued = False
 		if not frappe.flags.in_test:
 			try:
@@ -108,6 +231,10 @@ class CommunicationsNotification(Notification):
 					notification_name=self.name,
 					doc_type=doc.doctype,
 					doc_name=doc.name,
+					route_recipients=list(route_recipients) if route_recipients else None,
+					route_subject=route_subject or None,
+					route_message=route_message or None,
+					route_extra=route_extra or None,
 				)
 				enqueued = True
 			except Exception as e:
@@ -166,10 +293,16 @@ class CommunicationsNotification(Notification):
 			return None
 
 	def send_a_slack_dm_msg(self, doc, context):
-		if frappe.are_emails_muted():
+		route_recipients, route_subject, route_message, _, route_extra = get_sendmail_route_locals()
+		apply_sendmail_route_context(context, route_subject, route_message, route_extra)
+		if frappe.are_emails_muted() and not route_recipients:
 			return
 
-		recipients, cc, bcc = self.get_list_of_recipients(doc, context)
+		if route_recipients:
+			recipients = normalize_route_recipients(list(route_recipients))
+			cc, bcc = [], []
+		else:
+			recipients, cc, bcc = self.get_list_of_recipients(doc, context)
 
 		if not (recipients or cc or bcc):
 			return
@@ -210,7 +343,13 @@ class CommunicationsNotification(Notification):
 
 	def send_a_teams_dm_msg(self, doc, context):
 		"""Send a direct message via Microsoft Teams using Bot Framework REST API."""
-		recipients, cc, bcc = self.get_list_of_recipients(doc, context)
+		route_recipients, route_subject, route_message, _, route_extra = get_sendmail_route_locals()
+		apply_sendmail_route_context(context, route_subject, route_message, route_extra)
+		if route_recipients:
+			recipients = list(route_recipients)
+			cc, bcc = [], []
+		else:
+			recipients, cc, bcc = self.get_list_of_recipients(doc, context)
 
 		if not (recipients or cc or bcc):
 			return

@@ -90,7 +90,11 @@ doc_events = {
 		"validate": "communications.communications.overrides.event.validate",
 		"on_update": "communications.communications.overrides.event.on_update",
 		"on_trash": "communications.communications.overrides.event.on_trash",
-	}
+	},
+	"Notification": {
+		"on_update": "communications.sendmail_routes.invalidate_sendmail_route_cache_on_notification_change",
+		"on_trash": "communications.sendmail_routes.invalidate_sendmail_route_cache_on_notification_change",
+	},
 }
 
 scheduler_events = {
