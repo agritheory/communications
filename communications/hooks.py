@@ -92,8 +92,9 @@ doc_events = {
 		"on_trash": "communications.communications.overrides.event.on_trash",
 	},
 	"Notification": {
-		"on_update": "communications.sendmail_routes.invalidate_sendmail_route_cache_on_notification_change",
-		"on_trash": "communications.sendmail_routes.invalidate_sendmail_route_cache_on_notification_change",
+		"after_insert": "communications.email_overrides.invalidate_email_override_cache_on_notification_change",
+		"on_update": "communications.email_overrides.invalidate_email_override_cache_on_notification_change",
+		"on_trash": "communications.email_overrides.invalidate_email_override_cache_on_notification_change",
 	},
 }
 

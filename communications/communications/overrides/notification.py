@@ -20,7 +20,7 @@ from frappe.utils.jinja import validate_template
 from communications.communications.doctype.teams_webhook_url.teams_webhook_url import (
 	TeamsMessagingError,
 )
-from communications.sendmail_routes import normalize_route_recipients
+from communications.email_overrides import normalize_route_recipients
 
 # Error Log title field max 140 chars
 TEAMS_DM_LOG_TITLE = "Teams DM send failed"
@@ -38,16 +38,34 @@ def teams_dm_error_body(recipient: str, exc: BaseException) -> str:
 	return "\n".join(lines)
 
 
-def get_sendmail_route_locals():
-	route_recipients = getattr(frappe.local, "sendmail_route_recipients", None)
-	route_subject = getattr(frappe.local, "sendmail_route_subject", None)
-	route_message = getattr(frappe.local, "sendmail_route_message", None)
-	route_attachments = getattr(frappe.local, "sendmail_route_attachments", None)
-	route_extra = getattr(frappe.local, "sendmail_route_extra", None) or {}
-	return route_recipients, route_subject, route_message, route_attachments, route_extra
+def get_email_override_locals():
+	recipients = getattr(frappe.local, "email_override_recipients", None)
+	subject = getattr(frappe.local, "email_override_subject", None)
+	message = getattr(frappe.local, "email_override_message", None)
+	attachments = getattr(frappe.local, "email_override_attachments", None)
+	extra = getattr(frappe.local, "email_override_extra", None) or {}
+	return recipients, subject, message, attachments, extra
 
 
-def apply_sendmail_route_context(
+def build_notification_template_context(doc, alert=None, comments=None):
+	context = get_context(doc)
+	context["alert"] = alert
+	if comments is not None:
+		context["comments"] = comments
+	elif doc.get("_comments"):
+		context["comments"] = json.loads(doc.get("_comments"))
+	else:
+		context.setdefault("comments", None)
+	return context
+
+
+def render_notification_template(template, context):
+	if not template:
+		return ""
+	return frappe.render_template(template, context, is_path=False)
+
+
+def apply_email_override_context(
 	context,
 	route_subject=None,
 	route_message=None,
@@ -67,6 +85,15 @@ def apply_sendmail_route_context(
 		context["sendmail_workflow_actions"] = route_extra.get("workflow_actions")
 	if route_extra.get("workflow_message"):
 		context["sendmail_workflow_message"] = route_extra.get("workflow_message")
+	if route_extra.get("events") is not None:
+		context["sendmail_events"] = route_extra.get("events")
+	if route_extra.get("notification_log_type"):
+		context["sendmail_notification_log_type"] = route_extra.get("notification_log_type")
+	if route_extra.get("notification_log"):
+		log = frappe._dict(route_extra.get("notification_log"))
+		context["sendmail_notification_log"] = log
+		if log.get("from_user"):
+			context["sendmail_from_user"] = frappe.utils.get_fullname(log.from_user)
 
 
 def send_slack_or_teams_dm_notification(
@@ -84,23 +111,21 @@ def send_slack_or_teams_dm_notification(
 
 	alert = frappe.get_doc("Notification", notification_name)
 	doc = frappe.get_doc(doc_type, doc_name)
-	context = {"doc": doc, "alert": alert, "comments": None}
-	if doc.get("_comments"):
-		context["comments"] = json.loads(doc.get("_comments"))
+	context = build_notification_template_context(doc, alert=alert)
 
 	if alert.is_standard:
 		alert.load_standard_properties(context)
 
-	apply_sendmail_route_context(context, route_subject, route_message, route_extra)
+	apply_email_override_context(context, route_subject, route_message, route_extra)
 
 	if route_recipients:
-		frappe.local.sendmail_route_recipients = normalize_route_recipients(list(route_recipients))
+		frappe.local.email_override_recipients = normalize_route_recipients(list(route_recipients))
 	if route_subject is not None:
-		frappe.local.sendmail_route_subject = route_subject
+		frappe.local.email_override_subject = route_subject
 	if route_message is not None:
-		frappe.local.sendmail_route_message = route_message
+		frappe.local.email_override_message = route_message
 	if route_extra:
-		frappe.local.sendmail_route_extra = route_extra
+		frappe.local.email_override_extra = route_extra
 	try:
 		if alert.channel == "Slack DM":
 			alert.send_a_slack_dm_msg(doc, context)
@@ -109,8 +134,8 @@ def send_slack_or_teams_dm_notification(
 	except Exception as e:
 		alert.log_error("Failed to send Notification", e)
 	finally:
-		frappe.local.sendmail_route_recipients = None
-		frappe.local.sendmail_route_extra = None
+		frappe.local.email_override_recipients = None
+		frappe.local.email_override_extra = None
 
 
 class CommunicationsNotification(Notification):
@@ -120,6 +145,20 @@ class CommunicationsNotification(Notification):
 			validate_template(self.subject)
 
 		validate_template(self.message)
+
+		if self.get("email_override"):
+			if self.subject and "{{" in self.subject:
+				frappe.msgprint(
+					frappe._(
+						"Email Override notifications use Subject as the document title when a "
+						"Notification record is assigned. Use plain text in Subject and put Jinja "
+						"templates in Message (for example <code>{{ sendmail_subject }}</code>)."
+					),
+					indicator="orange",
+					title=frappe._("Subject is not rendered on assignment"),
+				)
+			frappe.cache().hdel("notifications", self.document_type)
+			return
 
 		if self.event in ("Days Before", "Days After") and not self.date_changed:
 			frappe.throw(frappe._("Please specify which date field must be checked"))
@@ -144,14 +183,14 @@ class CommunicationsNotification(Notification):
 			route_message,
 			route_attachments,
 			route_extra,
-		) = get_sendmail_route_locals()
-		apply_sendmail_route_context(context, route_subject, route_message, route_extra)
+		) = get_email_override_locals()
+		apply_email_override_context(context, route_subject, route_message, route_extra)
 
 		subject = self.subject
 		if route_recipients and route_subject:
 			subject = route_subject
 		if "{" in (subject or ""):
-			subject = frappe.render_template(subject, context)
+			subject = render_notification_template(subject, context)
 
 		if route_attachments:
 			attachments = route_attachments
@@ -166,7 +205,7 @@ class CommunicationsNotification(Notification):
 			return
 
 		sender = None
-		message = frappe.render_template(self.message, context)
+		message = render_notification_template(self.message, context)
 		if self.sender and self.sender_email:
 			sender = formataddr((self.sender, self.sender_email))
 
@@ -210,16 +249,13 @@ class CommunicationsNotification(Notification):
 		if frappe.flags.in_migrate:
 			return
 
-		context = get_context(doc)
-		context = {"doc": doc, "alert": self, "comments": None}
-		if doc.get("_comments"):
-			context["comments"] = json.loads(doc.get("_comments"))
+		context = build_notification_template_context(doc, alert=self)
 
 		if self.is_standard:
 			self.load_standard_properties(context)
 
-		route_recipients, route_subject, route_message, _, route_extra = get_sendmail_route_locals()
-		apply_sendmail_route_context(context, route_subject, route_message, route_extra)
+		route_recipients, route_subject, route_message, _, route_extra = get_email_override_locals()
+		apply_email_override_context(context, route_subject, route_message, route_extra)
 		enqueued = False
 		if not frappe.flags.in_test:
 			try:
@@ -293,8 +329,8 @@ class CommunicationsNotification(Notification):
 			return None
 
 	def send_a_slack_dm_msg(self, doc, context):
-		route_recipients, route_subject, route_message, _, route_extra = get_sendmail_route_locals()
-		apply_sendmail_route_context(context, route_subject, route_message, route_extra)
+		route_recipients, route_subject, route_message, _, route_extra = get_email_override_locals()
+		apply_email_override_context(context, route_subject, route_message, route_extra)
 		if frappe.are_emails_muted() and not route_recipients:
 			return
 
@@ -316,7 +352,7 @@ class CommunicationsNotification(Notification):
 		blocks = [
 			{
 				"type": "section",
-				"text": {"type": "mrkdwn", "text": frappe.render_template(self.message, context)},
+				"text": {"type": "mrkdwn", "text": render_notification_template(self.message, context)},
 			},
 		]
 		if show_link:
@@ -343,8 +379,8 @@ class CommunicationsNotification(Notification):
 
 	def send_a_teams_dm_msg(self, doc, context):
 		"""Send a direct message via Microsoft Teams using Bot Framework REST API."""
-		route_recipients, route_subject, route_message, _, route_extra = get_sendmail_route_locals()
-		apply_sendmail_route_context(context, route_subject, route_message, route_extra)
+		route_recipients, route_subject, route_message, _, route_extra = get_email_override_locals()
+		apply_email_override_context(context, route_subject, route_message, route_extra)
 		if route_recipients:
 			recipients = list(route_recipients)
 			cc, bcc = [], []
@@ -378,7 +414,7 @@ class CommunicationsNotification(Notification):
 
 		show_link = teams_webhook_doc.show_document_link
 		doc_url = get_url_to_form(doc.doctype, doc.name)
-		message_text = frappe.render_template(self.message, context)
+		message_text = render_notification_template(self.message, context)
 
 		# Build message content
 		body_content = f"<p>{message_text}</p>"
@@ -395,7 +431,7 @@ class CommunicationsNotification(Notification):
 		"""Like Notification.create_system_notification; handles None subject (e.g. Teams DM without email subject)."""
 		subject = self.subject or ""
 		if "{" in subject:
-			subject = frappe.render_template(self.subject or "", context)
+			subject = render_notification_template(self.subject or "", context)
 
 		attachments = self.get_attachment(doc)
 
@@ -412,7 +448,7 @@ class CommunicationsNotification(Notification):
 			"document_name": get_reference_name(doc),
 			"subject": subject,
 			"from_user": doc.modified_by or doc.owner,
-			"email_content": frappe.render_template(self.message, context),
+			"email_content": render_notification_template(self.message, context),
 			"attached_file": attachments and json.dumps(attachments[0]),
 		}
 		enqueue_create_notification(users, notification_doc)

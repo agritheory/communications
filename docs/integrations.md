@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Desk notifications and chat integrations
 
 <div class="byline">
-  Tyler Matteson 2026-04-23
+  Tyler Matteson 2026-05-19
 </div>
 
 
@@ -27,19 +27,17 @@ Configure the credential DocTypes, then create **Notification** records with **C
 
 Bot Framework fields plus service URL, etc. Details and Azure permissions are in [teams_setup.md](./teams_setup.md).
 
-## Sendmail route overrides
+## Email Override
 
-On app import, **`communications/__init__.py`** patches **`frappe.sendmail`** and **`send_notification_email`** so configured **Notification** records can replace selected Frappe emails (desk **Notification Log** emails: mentions, assignments, shares, energy points, alerts).
+On app import, **`communications/__init__.py`** patches specific Frappe email emitters so configured **Notification** records can replace selected stock emails (desk **Notification Log** types, document follow, workflow, event digest).
 
-**Important:** `send_notification_email` is one Frappe function for all Notification Log email types. Use **`sendmail_route_match`** (e.g. `{"notification_log_type": "Mention"}`) to narrow scope. Password reset and other site emails use different call sites and are not intercepted unless you configure them explicitly.
+Set **Email Override** on each **Notification** row (e.g. **Mention**, **Assignment**, **Document Follow**). Password reset and other site emails use different call sites and are not intercepted.
 
-Full scope, configuration, and examples: **[Sendmail route overrides](./sendmail-routes.md)**.
+Full scope, configuration, and examples: **[Email Override](./sendmail-routes.md)**.
 
 ## Assignment notifications
 
-On app import, **`communications/__init__.py`** replaces **`frappe.desk.form.assign_to.notify_assignment`** with **`custom_notify_assignment`**.
-
-If an **enabled** **Notification** exists with **Document Type** = **ToDo**, assignment notifications are sent via that **Notification** (queued). Otherwise the code falls back to Frappe-style notification log / email behavior (see `communications.communications.overrides.assign_to`).
+Assignment email uses the same path as other Notification Log types: Frappe creates a **`type: Assignment`** log, then **`send_notification_email`** runs. Configure a **Notification** with **Email Override** = **Assignment** to route delivery (Email, Slack DM, Teams DM, etc.).
 
 ## Phone helpers
 
@@ -47,6 +45,6 @@ If an **enabled** **Notification** exists with **Document Type** = **ToDo**, ass
 
 ## Related
 
-- [Sendmail route overrides](./sendmail-routes.md)
+- [Email Override](./sendmail-routes.md)
 - [Public Calendar Features](./calendar.md)
 - [Video conferencing](./video-conferencing.md)

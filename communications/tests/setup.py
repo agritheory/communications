@@ -65,7 +65,6 @@ def create_test_data():
 	create_employees(settings)
 	add_holiday_lists()
 	create_default_notifications()
-	create_sendmail_route_notifications()
 	create_public_calendars()
 	create_booked_event()
 
@@ -137,66 +136,6 @@ def setup_accounts():
 	)
 	update_account_number("1110 - Cash - CFC", "Petty Cash", account_number="1110")
 	update_account_number("Primary Checking - CFC", "Primary Checking", account_number="1201")
-
-
-def create_sendmail_route_notifications():
-	"""Insert example sendmail-route Notification rows (test setup only). Each row is independent."""
-	fixtures = [
-		{
-			"name": "Communications \u2014 Mention email (sendmail route)",
-			"subject": "{{ sendmail_subject }}",
-			"message": "{{ sendmail_message }}",
-			"sendmail_route_key": "('frappe.desk.doctype.notification_log.notification_log', 'send_notification_email')",
-			"sendmail_route_match": '{"notification_log_type": "Mention"}',
-		},
-		{
-			"name": "Communications \u2014 Notification Log email (sendmail route)",
-			"subject": "{{ doc.description or doc.name }}",
-			"message": "<p>{{ doc.description or '' }}</p>",
-			"sendmail_route_key": "('frappe.desk.doctype.notification_log.notification_log', 'send_notification_email')",
-			"sendmail_route_match": '{"notification_log_type": "Assignment"}',
-			"recipients": [{"receiver_by_document_field": "allocated_to"}],
-		},
-		{
-			"name": "Communications \u2014 Workflow action email (sendmail route)",
-			"subject": "{{ sendmail_subject }}",
-			"message": "{{ sendmail_workflow_message or sendmail_message }}",
-			"sendmail_route_key": "('frappe.workflow.doctype.workflow_action.workflow_action', 'send_workflow_action_email')",
-			"sendmail_route_match": '{"template": "workflow_action"}',
-		},
-		{
-			"name": "Communications \u2014 Document Follow email (sendmail route)",
-			"subject": "{{ sendmail_subject }}",
-			"message": "<p>Updates on documents you follow.</p>",
-			"sendmail_route_key": "('frappe.desk.form.document_follow', 'send_email_alert')",
-			"sendmail_route_match": '{"template": "document_follow"}',
-		},
-	]
-	for fixture in fixtures:
-		if frappe.db.exists("Notification", fixture["name"]):
-			continue
-		recipients = fixture.get("recipients") or []
-		frappe.get_doc(
-			{
-				"doctype": "Notification",
-				"enabled": 1,
-				"is_standard": 0,
-				"channel": "Email",
-				"event": "Save",
-				"document_type": "ToDo",
-				"days_in_advance": 0,
-				"send_system_notification": 0,
-				"send_to_all_assignees": 0,
-				"message_type": "Markdown",
-				"attach_print": 0,
-				"name": fixture["name"],
-				"subject": fixture["subject"],
-				"message": fixture["message"],
-				"sendmail_route_key": fixture["sendmail_route_key"],
-				"sendmail_route_match": fixture["sendmail_route_match"],
-				"recipients": recipients,
-			}
-		).insert(ignore_permissions=True)
 
 
 def create_public_calendars():

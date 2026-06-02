@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Public Calendar Features
 
 <div class="byline">
-  Tyler Matteson 2026-03-04
+  Tyler Matteson 2026-04-06
 </div>
 
 
@@ -224,7 +224,7 @@ Default notifications are created automatically during app installation:
 ## Other app behavior
 
 - **Notification DocType** — class override `CommunicationsNotification` (see `hooks.py` → `override_doctype_class`).
-- **Desk assignment emails** — `communications` patches `frappe.desk.form.assign_to.notify_assignment` so assignment notifications can use a **Notification** with **Document Type** = **ToDo** when one is enabled (see `communications/__init__.py` and `communications.communications.overrides.assign_to`).
+- **Desk assignment emails** — configure a **Notification** with **Email Override** = **Assignment** to route assignment Notification Log email to Slack DM, Teams DM, etc. See [Email Override](./sendmail-routes.md).
 
 ## Migration Notes
 
