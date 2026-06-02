@@ -65,6 +65,9 @@ def create_test_data():
 	create_employees(settings)
 	add_holiday_lists()
 	create_default_notifications()
+	from communications.email_override_defaults import create_default_email_override_notifications
+
+	create_default_email_override_notifications()
 	create_public_calendars()
 	create_booked_event()
 

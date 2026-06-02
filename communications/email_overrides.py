@@ -115,8 +115,9 @@ def build_override_extra(kwargs: dict) -> dict[str, Any] | None:
 		extra["docinfo"] = sendmail_args.get("docinfo")
 	if sendmail_args.get("timeline") is not None:
 		extra["timeline"] = sendmail_args.get("timeline")
-	if sendmail_args.get("actions") is not None:
-		extra["workflow_actions"] = list(sendmail_args.get("actions"))
+	actions = sendmail_args.get("actions")
+	if actions is not None:
+		extra["workflow_actions"] = list(actions)
 	if sendmail_args.get("events") is not None:
 		extra["events"] = sendmail_args.get("events")
 	workflow_message = sendmail_args.get("message") or kwargs.get("message")
