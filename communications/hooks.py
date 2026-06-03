@@ -53,9 +53,9 @@ web_include_js = "public_calendar.bundle.js"
 
 jinja = {
 	"methods": [
-		"communications.communications.notifications.rsvp_confirm_url",
-		"communications.communications.notifications.rsvp_decline_url",
-		"communications.communications.notifications.rsvp_cancel_url",
+		"communications.communications.public_calendar_notifications.rsvp_confirm_url",
+		"communications.communications.public_calendar_notifications.rsvp_decline_url",
+		"communications.communications.public_calendar_notifications.rsvp_cancel_url",
 	],
 }
 
@@ -92,14 +92,16 @@ doc_events = {
 		"on_trash": "communications.communications.overrides.event.on_trash",
 	},
 	"Notification": {
-		"after_insert": "communications.email_overrides.invalidate_email_override_cache_on_notification_change",
-		"on_update": "communications.email_overrides.invalidate_email_override_cache_on_notification_change",
-		"on_trash": "communications.email_overrides.invalidate_email_override_cache_on_notification_change",
+		"after_insert": "communications.communications.email_overrides.invalidate_email_override_cache_on_notification_change",
+		"on_update": "communications.communications.email_overrides.invalidate_email_override_cache_on_notification_change",
+		"on_trash": "communications.communications.email_overrides.invalidate_email_override_cache_on_notification_change",
 	},
 }
 
 scheduler_events = {
-	"hourly": ["communications.communications.notifications.send_appointment_reminders"],
+	"hourly": [
+		"communications.communications.public_calendar_notifications.send_appointment_reminders"
+	],
 }
 
 # before_tests = "communications.install.before_tests"

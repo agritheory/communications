@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Desk notifications and chat integrations
 
 <div class="byline">
-  Tyler Matteson 2026-05-19
+  Tyler Matteson 2026-06-02
 </div>
 
 
@@ -29,7 +29,7 @@ Bot Framework fields plus service URL, etc. Details and Azure permissions are in
 
 ## Email Override
 
-On app import, **`communications/__init__.py`** patches specific Frappe email emitters so configured **Notification** records can replace selected stock emails (desk **Notification Log** types, document follow, workflow, event digest).
+On app import, **`communications/communications/communications/email_override_patches.py`** patches specific Frappe email emitters so configured **Notification** records can replace selected stock emails (desk **Notification Log** types, document follow, workflow, event digest).
 
 Set **Email Override** on each **Notification** row (e.g. **Mention**, **Assignment**, **Document Follow**). Password reset and other site emails use different call sites and are not intercepted.
 

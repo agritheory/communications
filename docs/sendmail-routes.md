@@ -7,7 +7,7 @@ For license information, please see license.txt-->
   Tyler Matteson 2026-06-02
 </div>
 
-On app import, **`communications/__init__.py`** applies **targeted patches** to Frappe email emitters so selected outbound emails can be handled by **Notification** records (via **`CommunicationsNotification`**) instead of stock **`frappe.sendmail`**.
+On app import, **`communications/communications/communications/email_override_patches.py`** applies **targeted patches** to Frappe email emitters so selected outbound emails can be handled by **Notification** records (via **`CommunicationsNotification`**) instead of stock **`frappe.sendmail`**.
 
 Admins configure intercepts with the **Email Override** Select field on **Notification** (custom field in Desk). There is no Python tuple or JSON match configuration.
 

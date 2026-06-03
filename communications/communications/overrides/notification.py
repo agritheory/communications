@@ -20,7 +20,7 @@ from frappe.utils.jinja import validate_template
 from communications.communications.doctype.teams_webhook_url.teams_webhook_url import (
 	TeamsMessagingError,
 )
-from communications.email_overrides import normalize_route_recipients
+from communications.communications.email_overrides import normalize_route_recipients
 
 # Error Log title field max 140 chars
 TEAMS_DM_LOG_TITLE = "Teams DM send failed"

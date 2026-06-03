@@ -16,7 +16,7 @@ from communications.communications.ics import (
 	generate_ics,
 	generate_ics_attachment,
 )
-from communications.communications.notifications import (
+from communications.communications.public_calendar_notifications import (
 	reminder_already_sent,
 	generate_rsvp_token,
 	get_host_and_guests,

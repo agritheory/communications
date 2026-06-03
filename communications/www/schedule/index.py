@@ -12,7 +12,7 @@ from frappe.query_builder import DocType
 from frappe.query_builder.functions import Coalesce
 from frappe.utils import get_datetime, get_system_timezone
 
-from communications.communications.notifications import notify_booking
+from communications.communications.public_calendar_notifications import notify_booking
 
 
 def get_context(context):
