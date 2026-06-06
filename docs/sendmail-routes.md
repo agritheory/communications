@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Email Override
 
 <div class="byline">
-  Tyler Matteson 2026-06-02
+  Tyler Matteson 2026-06-03
 </div>
 
 On app import, **`communications/communications/communications/email_override_patches.py`** applies **targeted patches** to Frappe email emitters so selected outbound emails can be handled by **Notification** records (via **`CommunicationsNotification`**) instead of stock **`frappe.sendmail`**.
@@ -43,7 +43,7 @@ Flow:
 | **Energy Point** | Energy point award (skipped when `email_content` is `None`) |
 | **Alert** | Desk/system alerts, reminders |
 
-**Not** intercepted: password reset, welcome mail, **Notification** doc-event emails, newsletters, **Auto Email Report**, contact form, 2FA, backups, etc. See [sendmail-call-sites.md](./sendmail-call-sites.md).
+**Not** intercepted: password reset, welcome mail, **Notification** doc-event emails, newsletters, **Auto Email Report**, contact form, 2FA, backups, and other stock Frappe emails outside the patched emitters above.
 
 ## How routing works
 
@@ -76,7 +76,7 @@ Route recipients from the intercepted call override **Notification Recipient** r
 1. Sync custom fields (**Email Override** on **Notification**).
 2. Create one **Notification** per intent × channel (e.g. Mention → Slack DM, Workflow Action → Email).
 3. Set **Email Override** to the intended value; configure **Channel**, message template, webhook links.
-4. **`document_type`** / **`event`** on override rows are not used for triggering — they remain for form layout only.
+4. **`document_type`**, **`event`**, and **Recipients** are optional when **Email Override** is set (recipients come from the intercepted sendmail call).
 5. Put Jinja in **Message**, not **Subject**. Notification uses **Subject** as its title field; if someone assigns this Notification record, raw `{{ … }}` in Subject is inserted into Frappe’s stock assignment/share/mention sentences unchanged. Use **`{{ sendmail_subject }}`** in Message for the rendered desk notification text.
 6. Restart workers after changes (cache is per-process).
 
@@ -126,5 +126,4 @@ Starter rows (**Document Follow Override**, **Workflow Action Override**, **Even
 
 ## Related
 
-- [Sendmail call-site inventory](./sendmail-call-sites.md)
 - [Desk notifications and chat integrations](./integrations.md)

@@ -157,7 +157,8 @@ class CommunicationsNotification(Notification):
 					indicator="orange",
 					title=frappe._("Subject is not rendered on assignment"),
 				)
-			frappe.cache().hdel("notifications", self.document_type)
+			if self.document_type:
+				frappe.cache().hdel("notifications", self.document_type)
 			return
 
 		if self.event in ("Days Before", "Days After") and not self.date_changed:

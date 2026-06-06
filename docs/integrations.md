@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Desk notifications and chat integrations
 
 <div class="byline">
-  Tyler Matteson 2026-06-02
+  Tyler Matteson 2026-06-03
 </div>
 
 
@@ -41,7 +41,7 @@ Assignment email uses the same path as other Notification Log types: Frappe crea
 
 ## Phone helpers
 
-**`communications.communications.communications`** exposes **`start_phone_call`** (whitelisted stub). **`validate_phone_number`** and **`validate_data_fields`** implement a North-American-style phone pattern and optional **Data** field checks; they are available for reuse. Core **`frappe.utils.validate_phone_number`** is **not** patched by default (see commented line in `communications/__init__.py`).
+**`communications.communications.communications`** exposes **`start_phone_call`** (whitelisted stub). **`validate_phone_number`** and **`validate_data_fields`** implement a North-American-style phone pattern and optional **Data** field checks; they are available for reuse.
 
 ## Related
 

@@ -51,21 +51,18 @@ DEFAULT_EMAIL_OVERRIDE_NOTIFICATIONS = (
 		"email_override": "Document Follow",
 		"subject": "Document Follow",
 		"message": DOCUMENT_FOLLOW_MESSAGE,
-		"document_type": "ToDo",
 	},
 	{
 		"name": "Workflow Action Override",
 		"email_override": "Workflow Action",
 		"subject": "Workflow Action",
 		"message": WORKFLOW_ACTION_MESSAGE,
-		"document_type": "ToDo",
 	},
 	{
 		"name": "Event Digest Override",
 		"email_override": "Event Digest",
 		"subject": "Event Digest",
 		"message": EVENT_DIGEST_MESSAGE,
-		"document_type": "User",
 	},
 )
 
@@ -85,7 +82,6 @@ def create_default_email_override_notifications():
 				"enabled": 0,
 				"is_standard": 0,
 				"channel": "Email",
-				"event": "Save",
 				"message_type": "Markdown",
 				"days_in_advance": 0,
 				"send_system_notification": 0,
