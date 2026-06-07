@@ -48,21 +48,18 @@ EVENT_DIGEST_MESSAGE = """\
 DEFAULT_EMAIL_OVERRIDE_NOTIFICATIONS = (
 	{
 		"name": "Document Follow Override",
-		"event": "Document Follow",
 		"email_override": "Document Follow",
 		"subject": "Document Follow",
 		"message": DOCUMENT_FOLLOW_MESSAGE,
 	},
 	{
 		"name": "Workflow Action Override",
-		"event": "Workflow Action",
 		"email_override": "Workflow Action",
 		"subject": "Workflow Action",
 		"message": WORKFLOW_ACTION_MESSAGE,
 	},
 	{
 		"name": "Event Digest Override",
-		"event": "Event Digest",
 		"email_override": "Event Digest",
 		"subject": "Event Digest",
 		"message": EVENT_DIGEST_MESSAGE,

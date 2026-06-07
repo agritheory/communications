@@ -63,13 +63,14 @@ class PublicCalendar(Document):
 		)
 
 		if not existing:
-			frappe.share.add(
+			frappe.share.add_docshare(
 				self.doctype,
 				self.name,
 				user=self.user,
 				read=1,
 				write=1,
 				share=0,
+				flags={"ignore_share_permission": True},
 			)
 
 		# If user changed, remove share from old user

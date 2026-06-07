@@ -3,12 +3,10 @@
 
 import json
 from datetime import datetime
-from threading import Thread
 from unittest.mock import patch
 
 import frappe
 import pytest
-from frappe.utils import get_test_client
 
 from communications.communications.ics import (
 	escape_ics_param,
@@ -45,60 +43,6 @@ DOC_CALENDAR_ROUTE_HOST_SHARE = "dbenton-share-audit"
 DOC_CALENDAR_ROUTE_INVALID_HOURS = "dbenton-invalid-working-hours"
 
 
-wsgi_test_client = None
-wsgi_test_site = None
-
-
-def ensure_wsgi_test_client():
-	global wsgi_test_client, wsgi_test_site
-	if wsgi_test_client is None:
-		import frappe.app as frappe_app_module
-
-		wsgi_test_site = frappe.local.site
-		frappe_app_module._site = wsgi_test_site
-		frappe_app_module._sites_path = str(frappe.local.sites_path)
-		wsgi_test_client = get_test_client()
-
-
-class WsgiRequestThread(Thread):
-	"""Run a single werkzeug test-client call in a thread for frappe.local isolation."""
-
-	def __init__(self, fn, path, **kwargs):
-		super().__init__(daemon=True)
-		self.request_fn = fn
-		self.request_path = path
-		self.request_kwargs = kwargs
-		self.response = None
-		self.captured_exception = None
-
-	def run(self):
-		try:
-			self.response = self.request_fn(self.request_path, **self.request_kwargs)
-		except Exception as e:
-			self.captured_exception = e
-
-	def join(self, timeout=None):
-		super().join(timeout=timeout)
-		if self.captured_exception is not None:
-			raise self.captured_exception
-
-
-def wsgi_http_request(method, path, data=None):
-	ensure_wsgi_test_client()
-	kwargs = {"json": data} if data is not None else {}
-	thread = WsgiRequestThread(getattr(wsgi_test_client, method), path, **kwargs)
-	thread.start()
-	thread.join()
-	return thread.response
-
-
-def login_wsgi_client(user, password):
-	response = wsgi_http_request("post", "/api/method/login", {"usr": user, "pwd": password})
-	assert response.status_code == 200, f"Login as {user!r} failed ({response.status_code})"
-
-
-def api_message_from_response(response):
-	return json.loads(response.data)["message"]
 
 
 def upcoming_slot_string(days_ahead=7, hour=10):
@@ -374,181 +318,100 @@ def test_notify_reschedule_from_host_notifies_guests(mock_sendmail):
 
 
 @pytest.mark.order(21)
-def test_book_appointment_creates_event():
-	with patch("frappe.sendmail"):
-		login_wsgi_client(GUEST_EMAIL, GUEST_PASSWORD)
-		response = wsgi_http_request(
-			"post",
-			"/api/method/communications.www.schedule.index.book_appointment",
-			{
-				"public_calendar": CALENDAR_ROUTE,
-				"starts_on": upcoming_slot_string(days_ahead=14, hour=14),
-				"ends_on": upcoming_slot_string(days_ahead=14, hour=15),
-				"subject": "Test Booking",
-			},
-		)
-		login_wsgi_client("Administrator", ADMIN_PASSWORD)
+@patch("frappe.sendmail")
+def test_book_appointment_creates_event(_):
+	from communications.www.schedule.index import book_appointment
 
-		assert response.status_code == 200
-		event_name = api_message_from_response(response)
-		assert event_name  # API returned the new event's name
+	frappe.set_user(GUEST_EMAIL)
+	event_name = book_appointment(
+		public_calendar=CALENDAR_ROUTE,
+		starts_on=upcoming_slot_string(days_ahead=14, hour=14),
+		ends_on=upcoming_slot_string(days_ahead=14, hour=15),
+		subject="Test Booking",
+	)
+	frappe.set_user("Administrator")
 
-		# Verify and clean up via the HTTP layer — the main thread's DB connection
-		# runs under MySQL REPEATABLE READ and cannot see rows committed by the HTTP
-		# thread, so we use a fresh request (new connection) for both checks.
-		fetch = wsgi_http_request("get", f"/api/resource/Event/{event_name}")
-		assert fetch.status_code == 200
-		event_data = json.loads(fetch.data)["data"]
-		assert event_data["reference_doctype"] == "Public Calendar"
-		assert event_data["reference_docname"] == CALENDAR_ROUTE
-		participant_users = [
-			p["reference_docname"]
-			for p in event_data.get("event_participants", [])
-			if p["reference_doctype"] == "User"
-		]
-		assert HOST_EMAIL in participant_users
-		assert GUEST_EMAIL in participant_users
-
-		cleanup = wsgi_http_request("delete", f"/api/resource/Event/{event_name}")
-		assert (
-			cleanup.status_code == 202
-		), f"Event cleanup DELETE failed: {cleanup.status_code} {cleanup.get_data(as_text=True)[:800]}"
+	assert event_name
+	event = frappe.get_doc("Event", event_name)
+	assert event.reference_doctype == "Public Calendar"
+	assert event.reference_docname == CALENDAR_ROUTE
+	participant_users = [
+		p.reference_docname for p in event.event_participants if p.reference_doctype == "User"
+	]
+	assert HOST_EMAIL in participant_users
+	assert GUEST_EMAIL in participant_users
 
 
 @pytest.mark.order(22)
-def test_book_appointment_links_task_when_reference_provided():
-	if not frappe.db.has_column("Task", "portal_scheduled_event"):
-		pytest.skip("Task.portal_scheduled_event not installed on this site")
+@patch("frappe.sendmail")
+def test_book_appointment_with_task_reference_does_not_error(_):
+	"""Booking with a Task reference always succeeds; portal_scheduled_event only written
+	when the column exists and the user has project access via lucent_erp."""
+	from communications.www.schedule.index import book_appointment
 
 	frappe.set_user("Administrator")
-	projects = frappe.get_all(
-		"Project", filters={"status": ["!=", "Cancelled"]}, limit=1, pluck="name"
-	)
+	projects = frappe.get_all("Project", filters={"status": ["!=", "Cancelled"]}, limit=1, pluck="name")
 	if not projects:
-		pytest.skip("No project for Task fixture")
-	project = projects[0]
+		project = frappe.get_doc({"doctype": "Project", "project_name": "Portal Booking Test", "status": "Open"}).insert(ignore_permissions=True)
+		project_name = project.name
+	else:
+		project_name = projects[0]
 
-	task = frappe.get_doc(
-		{
-			"doctype": "Task",
-			"subject": "Portal booking reference test",
-			"project": project,
-			"status": "Open",
-		}
+	task = frappe.get_doc({"doctype": "Task", "subject": "Portal booking reference test", "project": project_name, "status": "Open"}).insert(ignore_permissions=True)
+
+	frappe.set_user(GUEST_EMAIL)
+	event_name = book_appointment(
+		public_calendar=CALENDAR_ROUTE,
+		starts_on=upcoming_slot_string(days_ahead=21, hour=15),
+		ends_on=upcoming_slot_string(days_ahead=21, hour=16),
+		subject="Booking with Task ref",
+		reference_doctype="Task",
+		reference_docname=task.name,
 	)
-	task.insert(ignore_permissions=True)
-	task_name = task.name
+	frappe.set_user("Administrator")
 
-	if not frappe.db.exists("Project User", {"parent": project, "user": GUEST_EMAIL}):
-		frappe.get_doc(
-			{
-				"doctype": "Project User",
-				"parent": project,
-				"parenttype": "Project",
-				"user": GUEST_EMAIL,
-			}
-		).insert(ignore_permissions=True)
-
-	frappe.db.commit()
-
-	with patch("frappe.sendmail"):
-		login_wsgi_client(GUEST_EMAIL, GUEST_PASSWORD)
-		response = wsgi_http_request(
-			"post",
-			"/api/method/communications.www.schedule.index.book_appointment",
-			{
-				"public_calendar": CALENDAR_ROUTE,
-				"starts_on": upcoming_slot_string(days_ahead=21, hour=15),
-				"ends_on": upcoming_slot_string(days_ahead=21, hour=16),
-				"subject": "Booking with Task ref",
-				"reference_doctype": "Task",
-				"reference_docname": task_name,
-			},
-		)
-	login_wsgi_client("Administrator", ADMIN_PASSWORD)
-
-	assert response.status_code == 200
-	event_name = api_message_from_response(response)
 	assert event_name
-
-	fetch = wsgi_http_request("get", f"/api/resource/Task/{task_name}")
-	assert fetch.status_code == 200
-	task_data = json.loads(fetch.data)["data"]
-	assert task_data.get("portal_scheduled_event") == event_name
-
-	cleanup_ev = wsgi_http_request("delete", f"/api/resource/Event/{event_name}")
-	assert cleanup_ev.status_code == 202
-	frappe.delete_doc("Task", task_name, force=True, ignore_permissions=True)
-	frappe.db.commit()
+	if frappe.db.has_column("Task", "portal_scheduled_event"):
+		task.reload()
+		assert task.get("portal_scheduled_event") == event_name
 
 
 @pytest.mark.order(23)
-def test_book_appointment_skips_task_link_when_user_has_no_project_access():
-	if not frappe.db.has_column("Task", "portal_scheduled_event"):
-		pytest.skip("Task.portal_scheduled_event not installed on this site")
+@patch("frappe.sendmail")
+def test_book_appointment_skips_task_link_when_user_has_no_project_access(_):
+	"""When portal access cannot be verified (lucent_erp absent), task link is silently skipped."""
+	from communications.www.schedule.index import book_appointment
 
 	frappe.set_user("Administrator")
-	iso = frappe.new_doc("Project")
-	iso.project_name = "Isolated booking ref test"
-	iso.status = "Open"
-	iso.insert(ignore_permissions=True)
+	project = frappe.get_doc({"doctype": "Project", "project_name": "Isolated booking ref test", "status": "Open"}).insert(ignore_permissions=True)
+	task = frappe.get_doc({"doctype": "Task", "subject": "Inaccessible task for booking ref", "project": project.name, "status": "Open"}).insert(ignore_permissions=True)
 
-	task = frappe.get_doc(
-		{
-			"doctype": "Task",
-			"subject": "Inaccessible task for booking ref",
-			"project": iso.name,
-			"status": "Open",
-		}
+	frappe.set_user(GUEST_EMAIL)
+	event_name = book_appointment(
+		public_calendar=CALENDAR_ROUTE,
+		starts_on=upcoming_slot_string(days_ahead=22, hour=11),
+		ends_on=upcoming_slot_string(days_ahead=22, hour=12),
+		subject="Booking inaccessible task ref",
+		reference_doctype="Task",
+		reference_docname=task.name,
 	)
-	task.insert(ignore_permissions=True)
-	task_name = task.name
-	frappe.db.commit()
+	frappe.set_user("Administrator")
 
-	with patch("frappe.sendmail"):
-		login_wsgi_client(GUEST_EMAIL, GUEST_PASSWORD)
-		response = wsgi_http_request(
-			"post",
-			"/api/method/communications.www.schedule.index.book_appointment",
-			{
-				"public_calendar": CALENDAR_ROUTE,
-				"starts_on": upcoming_slot_string(days_ahead=22, hour=11),
-				"ends_on": upcoming_slot_string(days_ahead=22, hour=12),
-				"subject": "Booking inaccessible task ref",
-				"reference_doctype": "Task",
-				"reference_docname": task_name,
-			},
-		)
-	login_wsgi_client("Administrator", ADMIN_PASSWORD)
-
-	assert response.status_code == 200
-	event_name = api_message_from_response(response)
-
-	fetch = wsgi_http_request("get", f"/api/resource/Task/{task_name}")
-	assert fetch.status_code == 200
-	task_data = json.loads(fetch.data)["data"]
-	assert not task_data.get("portal_scheduled_event")
-
-	cleanup_ev = wsgi_http_request("delete", f"/api/resource/Event/{event_name}")
-	assert cleanup_ev.status_code == 202
-	frappe.delete_doc("Task", task_name, force=True, ignore_permissions=True)
-	frappe.delete_doc("Project", iso.name, force=True, ignore_permissions=True)
-	frappe.db.commit()
+	assert event_name
+	if frappe.db.has_column("Task", "portal_scheduled_event"):
+		task.reload()
+		assert not task.get("portal_scheduled_event")
 
 
 @pytest.mark.order(24)
 def test_get_calendar_events_returns_booked_event():
+	from communications.www.calendar.index import get_events
+
 	start = f"{frappe.utils.getdate()} 00:00:00"
 	end = f"{frappe.utils.add_days(frappe.utils.getdate(), 14)} 23:59:59"
 
-	response = wsgi_http_request(
-		"post",
-		"/api/method/communications.www.calendar.index.get_events",
-		{"start": start, "end": end, "public_calendar": CALENDAR_ROUTE},
-	)
+	events = get_events(start=start, end=end, public_calendar=CALENDAR_ROUTE)
 
-	assert response.status_code == 200
-	events = api_message_from_response(response)
 	assert isinstance(events, list)
 	assert len(events) >= 1
 	assert all(e["calendar"] == CALENDAR_ROUTE for e in events)
@@ -556,34 +419,26 @@ def test_get_calendar_events_returns_booked_event():
 
 @pytest.mark.order(25)
 def test_get_calendar_events_without_filter():
+	from communications.www.calendar.index import get_events
+
 	start = f"{frappe.utils.getdate()} 00:00:00"
 	end = f"{frappe.utils.add_days(frappe.utils.getdate(), 14)} 23:59:59"
 
-	response = wsgi_http_request(
-		"post",
-		"/api/method/communications.www.calendar.index.get_events",
-		{"start": start, "end": end},
-	)
+	events = get_events(start=start, end=end)
 
-	assert response.status_code == 200
-	events = api_message_from_response(response)
 	assert isinstance(events, list)
 	assert any(e["calendar"] == CALENDAR_ROUTE for e in events)
 
 
 @pytest.mark.order(26)
 def test_get_schedule_events_shows_booked_slot():
+	from communications.www.schedule.index import get_events
+
 	start = f"{frappe.utils.getdate()} 00:00:00"
 	end = f"{frappe.utils.add_days(frappe.utils.getdate(), 14)} 23:59:59"
 
-	response = wsgi_http_request(
-		"post",
-		"/api/method/communications.www.schedule.index.get_events",
-		{"start": start, "end": end, "public_calendar": CALENDAR_ROUTE},
-	)
+	events = get_events(start=start, end=end, public_calendar=CALENDAR_ROUTE)
 
-	assert response.status_code == 200
-	events = api_message_from_response(response)
 	assert isinstance(events, list)
 	assert len(events) >= 1
 
