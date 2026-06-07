@@ -16,6 +16,13 @@ def patch_sendmail_recursion_guard() -> None:
 	original = frappe.sendmail
 
 	def guarded_sendmail(*args, **kwargs):
+		"""
+		APP: frappe
+		HASH: ab7e5ae99bf24dabb9e424bdc11e16aebd4fdb06
+		REPO: https://github.com/frappe/frappe/
+		PATH: frappe/__init__.py
+		METHOD: sendmail
+		"""
 		if getattr(frappe.local, "in_email_override", False):
 			return original(*args, **kwargs)
 		return original(*args, **kwargs)
@@ -30,6 +37,13 @@ def patch_send_notification_email() -> None:
 	original = notification_log_module.send_notification_email
 
 	def send_notification_email(doc):
+		"""
+		APP: frappe
+		HASH: 08785c16ca66c2d620d47c0768315fbd63c94010
+		REPO: https://github.com/frappe/frappe/
+		PATH: frappe/desk/doctype/notification_log/notification_log.py
+		METHOD: send_notification_email
+		"""
 		if doc.type == "Energy Point" and doc.email_content is None:
 			return
 
@@ -90,6 +104,13 @@ def patch_document_follow() -> None:
 	original = document_follow_module.send_email_alert
 
 	def send_email_alert(receiver, docinfo, timeline):
+		"""
+		APP: frappe
+		HASH: c51642a9d53f2bc92980c4b6d6ea7d6baff62e73
+		REPO: https://github.com/frappe/frappe/
+		PATH: frappe/desk/form/document_follow.py
+		METHOD: send_email_alert
+		"""
 		if not receiver:
 			return
 
@@ -120,6 +141,13 @@ def patch_workflow_action() -> None:
 	original = workflow_action_module.send_workflow_action_email
 
 	def send_workflow_action_email(doc, transitions):
+		"""
+		APP: frappe
+		HASH: 21947eef30e0cbc00ba8175c239796ccc9e7d147
+		REPO: https://github.com/frappe/frappe/
+		PATH: frappe/workflow/doctype/workflow_action/workflow_action.py
+		METHOD: send_workflow_action_email
+		"""
 		users_data = workflow_action_module.get_users_next_action_data(transitions, doc)
 		common_args = workflow_action_module.get_common_email_args(doc)
 		message = common_args.pop("message", None)
@@ -153,6 +181,13 @@ def patch_event_digest() -> None:
 	from frappe.utils.user import get_enabled_system_users
 
 	def send_event_digest():
+		"""
+		APP: frappe
+		HASH: 5993ab0a81f26e564707bc3b7d1711babc466272
+		REPO: https://github.com/frappe/frappe/
+		PATH: frappe/desk/doctype/event/event.py
+		METHOD: send_event_digest
+		"""
 		today = event_module.getdate()
 		users = [
 			user
@@ -195,6 +230,13 @@ def patch_evaluate_alert() -> None:
 	original = notification_module.evaluate_alert
 
 	def evaluate_alert(doc, alert, event):
+		"""
+		APP: frappe
+		HASH: 609ebf021f766963c1cfcfe119830958c2bfd49e
+		REPO: https://github.com/frappe/frappe/
+		PATH: frappe/email/doctype/notification/notification.py
+		METHOD: evaluate_alert
+		"""
 		alert_name = alert if isinstance(alert, str) else alert.name
 		if frappe.db.get_value("Notification", alert_name, "email_override"):
 			return
