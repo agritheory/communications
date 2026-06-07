@@ -265,7 +265,7 @@ export class PhoneField {
 			primary_action_label: __('Call with communications', null, 'Call with communications'),
 			primary_action: () => {
 				frappe.call({
-					method: 'communications.communications.start_communications_call',
+					method: 'communications.communications.start_phone_call',
 					args: {
 						phone_number: callNumber,
 						doctype: this.doctype,

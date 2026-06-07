@@ -43,8 +43,6 @@ DOC_CALENDAR_ROUTE_HOST_SHARE = "dbenton-share-audit"
 DOC_CALENDAR_ROUTE_INVALID_HOURS = "dbenton-invalid-working-hours"
 
 
-
-
 def upcoming_slot_string(days_ahead=7, hour=10):
 	d = frappe.utils.add_days(frappe.utils.getdate(), days_ahead)
 	return f"{d} {hour:02d}:00:00"
@@ -350,14 +348,25 @@ def test_book_appointment_with_task_reference_does_not_error(_):
 	from communications.www.schedule.index import book_appointment
 
 	frappe.set_user("Administrator")
-	projects = frappe.get_all("Project", filters={"status": ["!=", "Cancelled"]}, limit=1, pluck="name")
+	projects = frappe.get_all(
+		"Project", filters={"status": ["!=", "Cancelled"]}, limit=1, pluck="name"
+	)
 	if not projects:
-		project = frappe.get_doc({"doctype": "Project", "project_name": "Portal Booking Test", "status": "Open"}).insert(ignore_permissions=True)
+		project = frappe.get_doc(
+			{"doctype": "Project", "project_name": "Portal Booking Test", "status": "Open"}
+		).insert(ignore_permissions=True)
 		project_name = project.name
 	else:
 		project_name = projects[0]
 
-	task = frappe.get_doc({"doctype": "Task", "subject": "Portal booking reference test", "project": project_name, "status": "Open"}).insert(ignore_permissions=True)
+	task = frappe.get_doc(
+		{
+			"doctype": "Task",
+			"subject": "Portal booking reference test",
+			"project": project_name,
+			"status": "Open",
+		}
+	).insert(ignore_permissions=True)
 
 	frappe.set_user(GUEST_EMAIL)
 	event_name = book_appointment(
@@ -383,8 +392,17 @@ def test_book_appointment_skips_task_link_when_user_has_no_project_access(_):
 	from communications.www.schedule.index import book_appointment
 
 	frappe.set_user("Administrator")
-	project = frappe.get_doc({"doctype": "Project", "project_name": "Isolated booking ref test", "status": "Open"}).insert(ignore_permissions=True)
-	task = frappe.get_doc({"doctype": "Task", "subject": "Inaccessible task for booking ref", "project": project.name, "status": "Open"}).insert(ignore_permissions=True)
+	project = frappe.get_doc(
+		{"doctype": "Project", "project_name": "Isolated booking ref test", "status": "Open"}
+	).insert(ignore_permissions=True)
+	task = frappe.get_doc(
+		{
+			"doctype": "Task",
+			"subject": "Inaccessible task for booking ref",
+			"project": project.name,
+			"status": "Open",
+		}
+	).insert(ignore_permissions=True)
 
 	frappe.set_user(GUEST_EMAIL)
 	event_name = book_appointment(
