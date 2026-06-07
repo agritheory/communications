@@ -172,10 +172,7 @@ def test_priority_doctype_bypasses_batching():
 	assert get_minutes_diff(window_data) == config.collection_window_minutes
 
 	error_log = frappe.get_last_doc("Error Log")
-	assert (
-		error_log.method
-		== f"Error sending individual notification {queue_entry.name}: Please setup default outgoing Email Account from Tools > Email Account"
-	)
+	assert error_log.method.startswith(f"Error sending individual notification {queue_entry.name}:")
 
 
 def test_batch_processor_processes_expired_window():

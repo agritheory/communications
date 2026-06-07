@@ -5,7 +5,7 @@
 
 import frappe
 
-from communications.communications.notifications import (
+from communications.communications.public_calendar_notifications import (
 	get_public_calendar_for_event,
 	notify_cancellation,
 	notify_reschedule,

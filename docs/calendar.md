@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Public Calendar Features
 
 <div class="byline">
-  Tyler Matteson 2026-03-04
+  Tyler Matteson 2026-06-02
 </div>
 
 
@@ -145,15 +145,15 @@ Frappe core may also run **Event** hooks for **Google Calendar** sync; that pipe
 
 `hooks.py` registers these methods for use in website templates (e.g. **Notification** HTML):
 
-- `communications.communications.notifications.rsvp_confirm_url`
-- `communications.communications.notifications.rsvp_decline_url`
-- `communications.communications.notifications.rsvp_cancel_url`
+- `communications.communications.public_calendar_notifications.rsvp_confirm_url`
+- `communications.communications.public_calendar_notifications.rsvp_decline_url`
+- `communications.communications.public_calendar_notifications.rsvp_cancel_url`
 
 ## Scheduled Tasks
 
 ### Appointment Reminders
 
-**Function:** `communications.communications.notifications.send_appointment_reminders`
+**Function:** `communications.communications.public_calendar_notifications.send_appointment_reminders`
 
 **Schedule:** Hourly
 
@@ -224,7 +224,7 @@ Default notifications are created automatically during app installation:
 ## Other app behavior
 
 - **Notification DocType** — class override `CommunicationsNotification` (see `hooks.py` → `override_doctype_class`).
-- **Desk assignment emails** — `communications` patches `frappe.desk.form.assign_to.notify_assignment` so assignment notifications can use a **Notification** with **Document Type** = **ToDo** when one is enabled (see `communications/__init__.py` and `communications.communications.overrides.assign_to`).
+- **Desk assignment emails** — configure a **Notification** with **Email Override** = **Assignment** to route assignment Notification Log email to Slack DM, Teams DM, etc. See [Email Override](./sendmail-routes.md).
 
 ## Migration Notes
 
@@ -235,7 +235,7 @@ This module was migrated from the `public_calendar` app. Python modules under th
 | Original (`public_calendar` app) | Current (`communications` app) |
 | ------------------------------- | ------------------------------ |
 | `public_calendar.public_calendar.ics` | `communications.communications.ics` |
-| `public_calendar.public_calendar.notifications` | `communications.communications.notifications` |
+| `public_calendar.public_calendar.notifications` | `communications.communications.public_calendar_notifications` |
 | `public_calendar.public_calendar.overrides.event` | `communications.communications.overrides.event` |
 | `public_calendar.www.calendar` | `communications.www.calendar` |
 | `public_calendar.www.schedule` | `communications.www.schedule` |
