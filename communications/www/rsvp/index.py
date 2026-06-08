@@ -11,7 +11,7 @@ Processes RSVP actions from email links with query parameters:
 import frappe
 from frappe import _
 
-from communications.communications.notifications import (
+from communications.communications.public_calendar_notifications import (
 	get_public_calendar_for_event,
 	notify_cancellation,
 	verify_rsvp_token,

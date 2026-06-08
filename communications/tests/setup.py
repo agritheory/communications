@@ -8,6 +8,9 @@ from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
 
 from frappe.utils.password import update_password
 
+from communications.communications.email_override_defaults import (
+	create_default_email_override_notifications,
+)
 from communications.communications.install import (
 	create_default_notifications,
 	create_electronic_signature_email_template,
@@ -68,6 +71,7 @@ def create_test_data():
 	create_employees(settings)
 	add_holiday_lists()
 	create_default_notifications()
+	create_default_email_override_notifications()
 	create_electronic_signature_email_template()
 	create_public_calendars()
 	create_booked_event()

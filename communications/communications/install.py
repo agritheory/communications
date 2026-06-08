@@ -7,10 +7,15 @@ Installation hooks for Public Calendar.
 
 import frappe
 
+from communications.communications.email_override_defaults import (
+	create_default_email_override_notifications,
+)
+
 
 def after_install():
 	"""Create default notifications after app installation."""
 	create_default_notifications()
+	create_default_email_override_notifications()
 	create_electronic_signature_email_template()
 
 

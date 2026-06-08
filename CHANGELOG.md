@@ -5,6 +5,75 @@ For license information, please see license.txt-->
 
 <!-- version list -->
 
+## v15.7.0 (2026-06-07)
+
+### Bug Fixes
+
+- Make fields not required, removed referece to callsites
+  ([`c40390f`](https://github.com/agritheory/communications/commit/c40390f2b27c5bf1cfadf174a3684df827f149c9))
+
+### Chores
+
+- Fix mypy error
+  ([`cf30ab3`](https://github.com/agritheory/communications/commit/cf30ab3a8b6ea1b8bb1d05994249d2c6b5e09d11))
+
+- Reorganize some files
+  ([`8f90b9a`](https://github.com/agritheory/communications/commit/8f90b9a4f2cd16b396a8da69f774776275161e69))
+
+- Update lock file
+  ([`2952049`](https://github.com/agritheory/communications/commit/29520491093a0a2324f51681d773bf3c79cb6de6))
+
+### Continuous Integration
+
+- Fix premissions and path
+  ([`1cd0214`](https://github.com/agritheory/communications/commit/1cd0214a7fea02a870d3d5b46478dab1a207f860))
+
+- Test cleanup
+  ([`eaea8ec`](https://github.com/agritheory/communications/commit/eaea8ecf7b7ee583f777a98fc0350280ef7c9bfc))
+
+### Features
+
+- Add track_overrides
+  ([`cff55a7`](https://github.com/agritheory/communications/commit/cff55a79dc1ac6eb63e950c6e7657557f9eb12c4))
+
+### Testing
+
+- Add email override to default fixtures
+  ([`7632190`](https://github.com/agritheory/communications/commit/763219066ca3f26bc7813f33e02edbd88bef3c62))
+
+
+## v15.6.0 (2026-05-09)
+
+### Features
+
+- Enqueue dms
+  ([`9559f2c`](https://github.com/agritheory/communications/commit/9559f2c6d02991a148d1790c4d66380fb832f6b8))
+
+
+## v15.5.0 (2026-04-30)
+
+### Bug Fixes
+
+- Autoname
+  ([`df3a13e`](https://github.com/agritheory/communications/commit/df3a13ec2a994be5d9ab5a7b13129c606e358823))
+
+- Layout
+  ([`fe4e0a2`](https://github.com/agritheory/communications/commit/fe4e0a2bd797327d281d95c5b7b00b8b6ccdef13))
+
+- Layout
+  ([`8b25ec1`](https://github.com/agritheory/communications/commit/8b25ec1596a530a279c57a2286488589e12ced7c))
+
+### Chores
+
+- Rm plans
+  ([`e5cae1c`](https://github.com/agritheory/communications/commit/e5cae1caf3c13c2429a7d0bc820881b6239e19e7))
+
+### Features
+
+- Teams notifier via bot network
+  ([`49735c6`](https://github.com/agritheory/communications/commit/49735c65ea97133c17bf516e99f4b6a13f927e5d))
+
+
 ## v15.4.0 (2026-04-12)
 
 ### Features

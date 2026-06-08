@@ -8,7 +8,7 @@ Public Calendar API endpoints.
 import frappe
 from frappe import _
 
-from communications.communications.notifications import (
+from communications.communications.public_calendar_notifications import (
 	get_public_calendar_for_event,
 	notify_cancellation,
 )

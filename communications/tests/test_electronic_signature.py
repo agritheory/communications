@@ -11,7 +11,7 @@ from communications.communications.doctype.electronic_signature.electronic_signa
 from communications.www.electronic_signature import add_signature
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def signature_email_template():
 	create_electronic_signature_email_template()
 
@@ -61,7 +61,7 @@ def make_electronic_signature_with_signers(signers_status="Out for Signature"):
 	return es, email, contact_name
 
 
-def test_add_signature_completes_and_sets_status(signature_email_template):
+def test_add_signature_completes_and_sets_status():
 	es, email, contact_name = make_electronic_signature_with_signers()
 	frappe.set_user(email)
 	assert es.has_permission("read", user=email) is True
@@ -78,7 +78,7 @@ def test_add_signature_completes_and_sets_status(signature_email_template):
 	frappe.set_user("Administrator")
 
 
-def test_add_signature_rejects_duplicate(signature_email_template):
+def test_add_signature_rejects_duplicate():
 	es, email, contact_name = make_electronic_signature_with_signers()
 	frappe.set_user(email)
 	payload = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
@@ -88,7 +88,7 @@ def test_add_signature_rejects_duplicate(signature_email_template):
 	frappe.set_user("Administrator")
 
 
-def test_add_signature_rejects_wrong_user(signature_email_template):
+def test_add_signature_rejects_wrong_user():
 	es, email, contact_name = make_electronic_signature_with_signers()
 	frappe.set_user("Administrator")
 	other_email = f"other_esign_{frappe.generate_hash(length=6)}@example.com"
@@ -102,14 +102,14 @@ def test_add_signature_rejects_wrong_user(signature_email_template):
 	frappe.set_user("Administrator")
 
 
-def test_has_permission_denies_non_signer_customer(signature_email_template):
+def test_has_permission_denies_non_signer_customer():
 	es, email, contact_name = make_electronic_signature_with_signers()
 	other_email = f"stranger_esign_{frappe.generate_hash(length=6)}@example.com"
 	other = make_website_signer_user(other_email)
 	assert has_electronic_signature_permission(es, user=other.name, ptype="read") is False
 
 
-def test_document_html_renders_for_signer_without_reference_doc_perm(signature_email_template):
+def test_document_html_renders_for_signer_without_reference_doc_perm():
 	"""Signers must see embedded print HTML even when they cannot read the referenced doc."""
 	frappe.set_user("Administrator")
 	note = frappe.new_doc("Note")
@@ -132,7 +132,7 @@ def test_document_html_renders_for_signer_without_reference_doc_perm(signature_e
 	frappe.set_user("Administrator")
 
 
-def test_fetch_signature_invitation_email(signature_email_template):
+def test_fetch_signature_invitation_email():
 	es, email, contact_name = make_electronic_signature_with_signers("Draft")
 	frappe.set_user("Administrator")
 	from communications.communications.signatures import fetch_signature_invitation_email
@@ -142,7 +142,7 @@ def test_fetch_signature_invitation_email(signature_email_template):
 	assert email in (out.get("recipients") or "")
 
 
-def test_two_signers_then_completed(signature_email_template):
+def test_two_signers_then_completed():
 	frappe.set_user("Administrator")
 	email_a = f"esign_a_{frappe.generate_hash(length=6)}@example.com"
 	email_b = f"esign_b_{frappe.generate_hash(length=6)}@example.com"
