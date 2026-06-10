@@ -7,6 +7,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        files: 'communications.*'
         exclude: '.*json$|.*txt$|.*csv|.*md|.*svg'
       - id: check-yaml
       - id: no-commit-to-branch
@@ -45,10 +46,14 @@ repos:
 
   - repo: https://github.com/agritheory/test_utils
 <<<<<<< HEAD
+<<<<<<< HEAD
     rev: v1.25.0
 =======
     rev: v1.25.1
 >>>>>>> c8ac71088305095d2328bf7ee723b0c6812cc0be
+=======
+    rev: v1.25.1
+>>>>>>> ee0e46a30d9b18a70500f18387a4e2781b896bf9
     hooks:
       - id: update_pre_commit_config
       - id: validate_frappe_project
@@ -58,7 +63,7 @@ repos:
       - id: bylines
         exclude: 'README.md|CHANGELOG.md'
       - id: clean_customized_doctypes
-        args: ['--app', 'upro_erp']
+        args: ['--app', 'communications']
       - id: validate_customizations
       - id: validate_patches
         args: ['--app', 'communications']
@@ -66,24 +71,16 @@ repos:
         args: ['--directory', '.', '--app', 'communications', '--base-branch', 'version-15']
       - id: check_code_duplication
         args: ['--max-clones', '60', '--max-percentage', '5.0']
-      - id: semgrep_fmt
-        args:
-          - "--config=.semgrep.yml"
-          - "--config=https://raw.githubusercontent.com/frappe/semgrep-rules/develop/rules/frappe_correctness.yml"
-          - "--disable-version-check"
-          - "--skip-unknown-extensions"
+      - id: static_analysis
+        args: ['.']
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.1.0
     hooks:
       - id: prettier
+        args: ['--config', '.prettierrc.cjs', '--ignore-path', '.prettierignore']
         types_or: [javascript, vue, scss]
-        exclude: |
-          (?x)^(
-            .*node_modules.*|
-            communications/public/dist/.*|
-            communications/public/js/lib/.*
-          )$
+        exclude: 'communications/public/js/lib/.*'
 
 ci:
   autoupdate_schedule: weekly
