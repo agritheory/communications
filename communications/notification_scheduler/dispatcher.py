@@ -11,6 +11,7 @@ from frappe.desk.doctype.notification_log.notification_log import (
 from communications.communications.doctype.notification_window_settings.notification_window_settings import (
 	NotificationWindowSettings,
 )
+from communications.communications.email_overrides import try_email_override
 
 
 class Dispatcher:
@@ -21,6 +22,27 @@ class Dispatcher:
 			if not user_email:
 				frappe.log_error(f"No email found for user {user}", "Dispatcher")
 				return False
+
+			kwargs = {
+				"recipients": [user_email],
+				"subject": digest_content["subject"],
+				"message": digest_content["html"],
+				"reference_doctype": "Assignment Notification Queue",
+				"reference_name": notifications[0]["name"] if notifications else None,
+				"now": frappe.flags.in_test,
+				"notification_log_type": "Assignment",
+				"notification_log": {
+					"type": "Assignment",
+					"subject": digest_content["subject"],
+					"email_content": digest_content["html"],
+					"from_user": frappe.session.user,
+					"for_user": user,
+				},
+			}
+
+			context_doc = frappe.get_doc("User", user)
+			if try_email_override("Mention, Assignment, Share, Energy Point, Alert", context_doc, kwargs):
+				return True
 
 			frappe.sendmail(
 				recipients=[user_email],
@@ -58,6 +80,35 @@ class Dispatcher:
 				}
 				html = frappe.render_template(email_template.response_, context)
 				subject = email_template.subject or f"New assignment: {doc.reference_name}"
+
+				kwargs = {
+					"recipients": [user_email],
+					"subject": subject,
+					"message": html,
+					"reference_doctype": doc.reference_doctype,
+					"reference_name": doc.reference_name,
+					"now": frappe.flags.in_test,
+					"notification_log_type": "Assignment",
+					"notification_log": {
+						"type": "Assignment",
+						"subject": subject,
+						"email_content": html,
+						"from_user": doc.assigned_by,
+						"for_user": doc.assigned_to,
+						"document_type": doc.reference_doctype,
+						"document_name": doc.reference_name,
+					},
+				}
+
+				context_doc = frappe.get_doc(doc.reference_doctype, doc.reference_name)
+				if try_email_override("Mention, Assignment, Share, Energy Point, Alert", context_doc, kwargs):
+					frappe.db.set_value(
+						"Assignment Notification Queue",
+						notification_name,
+						{"status": "Sent", "processed_at": now_datetime(), "notification_sent": 1},
+					)
+					return True
+
 				frappe.sendmail(
 					recipients=[user_email],
 					subject=subject,
@@ -85,6 +136,35 @@ class Dispatcher:
 					"doc_link": get_url_to_form(doc.reference_doctype, doc.reference_name),
 				}
 				header = _("Assignment Update on {0}", lang=assigned_user.language).format(doc.reference_name)
+
+				kwargs = {
+					"recipients": assigned_user.email,
+					"subject": strip_html(subject),
+					"template": "new_notification",
+					"args": args,
+					"header": [header, "orange"],
+					"now": frappe.flags.in_test,
+					"notification_log_type": "Assignment",
+					"notification_log": {
+						"type": "Assignment",
+						"subject": strip_html(subject),
+						"email_content": html,
+						"from_user": doc.assigned_by,
+						"for_user": doc.assigned_to,
+						"document_type": doc.reference_doctype,
+						"document_name": doc.reference_name,
+					},
+				}
+
+				context_doc = frappe.get_doc(doc.reference_doctype, doc.reference_name)
+				if try_email_override("Mention, Assignment, Share, Energy Point, Alert", context_doc, kwargs):
+					frappe.db.set_value(
+						"Assignment Notification Queue",
+						notification_name,
+						{"status": "Sent", "processed_at": now_datetime(), "notification_sent": 1},
+					)
+					return True
+
 				frappe.sendmail(
 					recipients=assigned_user.email,
 					subject=strip_html(subject),

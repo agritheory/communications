@@ -332,3 +332,101 @@ def test_cleanup_removes_old_entries():
 
 	assert not frappe.db.exists("Assignment Notification Queue", old_doc.name)
 	assert frappe.db.exists("Assignment Notification Queue", recent_doc.name)
+
+
+def test_digest_routed_through_email_override():
+	"""When an email override Notification is configured for Assignment, the digest
+	is routed through try_email_override instead of direct frappe.sendmail."""
+	from communications.notification_scheduler.dispatcher import Dispatcher
+
+	config = frappe.get_single("Notification Window Settings")
+	config.enabled = 1
+	config.delivery_start_hour = 0
+	config.delivery_end_hour = 23
+	config.save()
+
+	notification = frappe.get_doc(
+		{
+			"doctype": "Notification",
+			"name": "Test Assignment Override",
+			"subject": "Test Override",
+			"message": "{{ sendmail_message }}",
+			"channel": "Email",
+			"enabled": 1,
+			"email_override": "Mention, Assignment, Share, Energy Point, Alert",
+		}
+	).insert(ignore_permissions=True)
+	frappe.db.commit()
+
+	supplier = frappe.get_all("Supplier", limit=1, pluck="name")[0]
+	assign_user(
+		{"doctype": "Supplier", "name": supplier, "assign_to": [TEST_USER], "description": "test"}
+	)
+	frappe.db.commit()
+
+	force_expire_window(TEST_USER)
+
+	with patch.object(DeliveryRestrictions, "is_within_delivery_hours", return_value=True):
+		with patch(
+			"communications.notification_scheduler.dispatcher.try_email_override", return_value=True
+		) as mock_override:
+			BatchProcessor.process_expired_windows()
+			frappe.db.commit()
+
+			assert mock_override.called
+			call_args = mock_override.call_args
+			assert call_args[0][0] == "Mention, Assignment, Share, Energy Point, Alert"
+			assert call_args[0][1].doctype == "User"
+			assert call_args[0][1].name == TEST_USER
+
+	notification.delete(ignore_permissions=True)
+	frappe.db.commit()
+
+
+def test_individual_notification_routed_through_email_override():
+	"""When an email override Notification is configured for Assignment, individual
+	(bypass) notifications are routed through try_email_override."""
+	from communications.notification_scheduler.dispatcher import Dispatcher
+
+	config = frappe.get_single("Notification Window Settings")
+	config.enabled = 1
+	config.bypass_batching_for_priority = 1
+	config.priority_doctypes = "Task"
+	config.save()
+
+	notification = frappe.get_doc(
+		{
+			"doctype": "Notification",
+			"name": "Test Assignment Override Individual",
+			"subject": "Test Override",
+			"message": "{{ sendmail_subject }}",
+			"channel": "Email",
+			"enabled": 1,
+			"email_override": "Mention, Assignment, Share, Energy Point, Alert",
+		}
+	).insert(ignore_permissions=True)
+	frappe.db.commit()
+
+	task = frappe.get_doc({"doctype": "Task", "subject": "Test Task Individual"}).insert()
+
+	with patch(
+		"communications.notification_scheduler.dispatcher.try_email_override", return_value=True
+	) as mock_override:
+		assign_user(
+			{
+				"doctype": "Task",
+				"name": task.name,
+				"assign_to": [TEST_USER],
+				"description": "Test assignment",
+			}
+		)
+		frappe.db.commit()
+
+		assert mock_override.called
+		call_args = mock_override.call_args
+		assert call_args[0][0] == "Mention, Assignment, Share, Energy Point, Alert"
+		assert call_args[0][1].doctype == "Task"
+		assert call_args[0][1].name == task.name
+
+	notification.delete(ignore_permissions=True)
+	frappe.db.commit()

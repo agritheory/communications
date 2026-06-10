@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Sliding Window Notification Batching
 
 <div class="byline">
-  Feature documentation 2026-06-10
+  Francisco Roldan 2026-06-10
 </div>
 
 The **Sliding Window Notification Batching** feature collects assignment notifications over a configurable time window and delivers them as a single batched email digest instead of sending individual emails for each assignment. This reduces notification fatigue and respects user delivery hours.
@@ -100,6 +100,54 @@ Queued --> Sent        (digest or individual sent successfully)
 ### Cleanup
 
 A daily scheduled task (`cleanup_old_queue_entries()`) removes **Sent** and **Failed** entries older than **30 days** to prevent database bloat.
+
+## Email Override Integration
+
+The sliding window notification system integrates with the **Email Override** feature (documented in [sendmail-routes.md](./sendmail-routes.md)) to route assignment notifications through configured **Notification** records.
+
+### How it works
+
+When a **Notification** record is configured with **Email Override** set to `Mention, Assignment, Share, Energy Point, Alert`, the `Dispatcher` class checks for this override before sending emails:
+
+1. **Digest emails**: When `Dispatcher.send_digest()` is called, it constructs kwargs with the digest subject and HTML content, then calls `try_email_override()` with the assigned **User** as the context document. If an override exists, the digest is routed through the Notification's configured channel (Email, Slack DM, Teams DM, etc.).
+
+2. **Individual notifications**: When `Dispatcher.send_individual_notification()` is called (for priority bypass notifications), it constructs kwargs with the assignment subject and message, then calls `try_email_override()` with the referenced business document as the context. If an override exists, the notification is routed through the Notification's configured channel.
+
+3. **Fallback**: If no email override is configured, the system falls back to direct `frappe.sendmail` calls as before.
+
+### Template variables
+
+When routed through an email override, the following template variables are available in the Notification's **Message** field:
+
+| Variable | Description |
+|----------|-------------|
+| `sendmail_subject` | The digest or individual assignment subject |
+| `sendmail_message` | The digest HTML or individual notification body |
+| `sendmail_notification_log_type` | Always `"Assignment"` for batched notifications |
+| `sendmail_notification_log` | Dict with `type`, `subject`, `email_content`, `from_user`, `for_user`, `document_type`, `document_name` |
+| `sendmail_from_user` | Full name of the user who made the assignment |
+
+### Configuration example
+
+To route assignment digests to Slack DM:
+
+1. Create a **Notification** record:
+   - **Email Override**: `Mention, Assignment, Share, Energy Point, Alert`
+   - **Channel**: Slack DM
+   - **Slack Webhook URL**: (select your Slack webhook)
+   - **Subject**: `Assignment Digest`
+   - **Message**: 
+     ```jinja
+     {% if sendmail_notification_log_type == "Assignment" %}
+     {{ sendmail_from_user }} assigned you new tasks:
+     {{ sendmail_message | striptags }}
+     {% endif %}
+     ```
+   - **Enabled**: Yes
+
+2. Enable **Notification Window Settings** with your desired collection window and delivery hours.
+
+Assignment notifications will now be batched and delivered as Slack DMs instead of emails.
 
 ## Architecture
 
