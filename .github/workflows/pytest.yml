@@ -83,6 +83,7 @@ jobs:
           set -o pipefail
           source env/bin/activate
           cd apps/communications
+          poetry install
           pytest --cov=communications --cov-report=xml -s | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
