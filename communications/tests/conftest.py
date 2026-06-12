@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -39,6 +40,7 @@ def db_instance():
 	if (sites / "common_site_config.json").is_file():
 		currentsite = json.loads((sites / "common_site_config.json").read_text()).get("default_site")
 
+	os.chdir(sites)
 	frappe.init(site=currentsite, sites_path=sites)
 	frappe.connect()
 	frappe.db.commit = MagicMock()

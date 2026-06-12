@@ -8,7 +8,7 @@ app_description = "Messaging and telephony extensions for Frappe"
 app_email = "support@agritheory.dev"
 app_license = "mit"
 
-# required_apps = []
+required_apps = ["erpnext", "hrms"]
 
 # add_to_apps_screen = [
 # 	{

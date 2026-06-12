@@ -80,6 +80,7 @@ jobs:
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
         run: |
+          set -o pipefail
           source env/bin/activate
           cd apps/communications
           pytest --cov=communications --cov-report=xml -s | tee pytest-coverage.txt
