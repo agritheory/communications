@@ -5,6 +5,19 @@ For license information, please see license.txt-->
 
 <!-- version list -->
 
+## v15.8.0 (2026-06-12)
+
+### Documentation
+
+- Sliding window notification batching
+  ([`c615a0c`](https://github.com/agritheory/communications/commit/c615a0c39401e824321bf18b27388c2291f5bd35))
+
+### Features
+
+- Sendmail override integration
+  ([`4a74352`](https://github.com/agritheory/communications/commit/4a74352d2004433bce6699278d206026e7b850c1))
+
+
 ## v15.7.0 (2026-06-07)
 
 ### Bug Fixes

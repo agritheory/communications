@@ -112,13 +112,32 @@ doc_events = {
 	},
 }
 
+# Scheduled Tasks
+# ---------------
+
 scheduler_events = {
+	"cron": {
+		"* * * * *": [
+			"communications.notification_scheduler.background_jobs.process_notification_windows"
+		]
+	},
+	"daily": ["communications.notification_scheduler.background_jobs.cleanup_old_queue_entries"],
 	"hourly": [
 		"communications.communications.public_calendar_notifications.send_appointment_reminders"
 	],
 }
 
+# Testing
+# -------
+
 # before_tests = "communications.install.before_tests"
+
+# Overriding Methods
+# ------------------------------
+#
+override_whitelisted_methods = {
+	"frappe.desk.form.assign_to.add": "communications.communications.overrides.assignment.add"
+}
 
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "communications.event.get_events"
