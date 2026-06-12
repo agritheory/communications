@@ -1,0 +1,144 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"autoname": "format:ANQ-{####}",
+	"creation": "2025-01-02 12:00:00.000000",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"assigned_to",
+		"reference_doctype",
+		"reference_name",
+		"column_break_4",
+		"window_key",
+		"status",
+		"section_break_7",
+		"assigned_by",
+		"assignment_date",
+		"column_break_10",
+		"processed_at",
+		"notification_sent",
+		"section_break_13",
+		"bypass_batching",
+		"description"
+	],
+	"fields": [
+		{
+			"fieldname": "assigned_to",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"label": "Assigned To",
+			"options": "User",
+			"reqd": 1
+		},
+		{
+			"fieldname": "reference_doctype",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"label": "Reference DocType",
+			"options": "DocType",
+			"reqd": 1
+		},
+		{
+			"fieldname": "reference_name",
+			"fieldtype": "Dynamic Link",
+			"in_list_view": 1,
+			"label": "Reference Name",
+			"options": "reference_doctype",
+			"reqd": 1
+		},
+		{
+			"fieldname": "column_break_4",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "window_key",
+			"fieldtype": "Data",
+			"label": "Window Key",
+			"read_only": 1
+		},
+		{
+			"default": "Queued",
+			"fieldname": "status",
+			"fieldtype": "Select",
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"label": "Status",
+			"options": "Queued\nProcessing\nSent\nFailed"
+		},
+		{
+			"fieldname": "section_break_7",
+			"fieldtype": "Section Break"
+		},
+		{
+			"fieldname": "assigned_by",
+			"fieldtype": "Link",
+			"label": "Assigned By",
+			"options": "User"
+		},
+		{
+			"default": "Now",
+			"fieldname": "assignment_date",
+			"fieldtype": "Datetime",
+			"label": "Assignment Date"
+		},
+		{
+			"fieldname": "column_break_10",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "processed_at",
+			"fieldtype": "Datetime",
+			"label": "Processed At",
+			"read_only": 1
+		},
+		{
+			"default": "0",
+			"fieldname": "notification_sent",
+			"fieldtype": "Check",
+			"label": "Notification Sent"
+		},
+		{
+			"fieldname": "section_break_13",
+			"fieldtype": "Section Break"
+		},
+		{
+			"default": "0",
+			"fieldname": "bypass_batching",
+			"fieldtype": "Check",
+			"label": "Bypass Batching"
+		},
+		{
+			"fieldname": "description",
+			"fieldtype": "Small Text",
+			"label": "Description"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"links": [],
+	"modified": "2025-01-02 12:01:02.000000",
+	"modified_by": "Administrator",
+	"module": "Communications",
+	"name": "Assignment Notification Queue",
+	"naming_rule": "Expression",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

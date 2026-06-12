@@ -9,7 +9,7 @@ from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
 from frappe.utils.password import update_password
 
 from communications.communications.install import create_default_notifications
-from communications.tests.fixtures import employees, holidays
+from communications.tests.fixtures import employees, holidays, suppliers, tax_authority, users
 
 
 def before_test():
@@ -38,6 +38,7 @@ def before_test():
 	set_defaults_for_tests()
 	frappe.db.commit()
 	create_test_data()
+
 	for modu in frappe.get_all("Module Onboarding"):
 		frappe.db.set_value("Module Onboarding", modu, "is_complete", 1)
 	frappe.set_value("Website Settings", "Website Settings", "home_page", "login")
@@ -63,6 +64,9 @@ def create_test_data():
 	create_company_address(settings)
 	create_bank_and_bank_account(settings)
 	create_employees(settings)
+	create_users(users)
+	create_suppliers(settings)
+	create_items(settings)
 	add_holiday_lists()
 	create_default_notifications()
 	from communications.communications.email_override_defaults import (
@@ -72,6 +76,7 @@ def create_test_data():
 	create_default_email_override_notifications()
 	create_public_calendars()
 	create_booked_event()
+	dismiss_onboarding()
 
 
 def create_company_address(settings):
@@ -114,7 +119,8 @@ def create_bank_and_bank_account(settings):
 	doc.company = settings.company
 	opening_balance = 50000.00
 	doc.append(
-		"accounts", {"account": settings.company_account, "debit_in_account_currency": opening_balance}
+		"accounts",
+		{"account": settings.company_account, "debit_in_account_currency": opening_balance},
 	)
 	retained_earnings = frappe.get_value(
 		"Account", {"account_name": "Retained Earnings", "company": settings.company}
@@ -238,3 +244,66 @@ def add_holiday_lists():
 		hl = frappe.new_doc("Holiday List")
 		hl.update(holiday_list)
 		hl.save()
+
+
+def create_suppliers(settings):
+	for supplier in suppliers + tax_authority:
+		biz = frappe.new_doc("Supplier")
+		biz.supplier_name = supplier[0]
+		biz.supplier_group = "Services"
+		biz.country = "United States"
+		biz.supplier_default_mode_of_payment = supplier[2]
+		biz.currency = "USD"
+		biz.default_price_list = "Standard Buying"
+		biz.save()
+
+
+def create_items(settings):
+	for supplier in suppliers + tax_authority:
+		item = frappe.new_doc("Item")
+		item.item_code = item.item_name = supplier[1]
+		item.item_group = "Services"
+		item.stock_uom = "Nos"
+		item.maintain_stock = 0
+		item.is_sales_item, item.is_sub_contracted_item, item.include_item_in_manufacturing = 0, 0, 0
+		item.grant_commission = 0
+		item.is_purchase_item = 1
+		item.append("supplier_items", {"supplier": supplier[0]})
+		item.append(
+			"item_defaults",
+			{"company": settings.company, "default_warehouse": "", "default_supplier": supplier[0]},
+		)
+		item.save()
+
+
+def create_users(users):
+	for u in users:
+		user = frappe.new_doc("User")
+		user.email = u["email"]
+		user.first_name = u["first_name"]
+		user.last_name = u["last_name"]
+		user.send_welcome_email = u["send_welcome_email"]
+		user.enabled = u["enabled"]
+		user.language = u["language"]
+		user.time_zone = u["time_zone"]
+		user.save()
+		frappe.db.commit()
+
+		role = frappe.new_doc("Has Role")
+		role.parent = u["email"]
+		role.parentfield = "roles"
+		role.parenttype = "User"
+		role.role = u["role"]
+		role.save()
+		frappe.db.commit()
+
+		# Reset user_type to override "Website User" selection (doesn't work when set above)
+		user = frappe.get_doc("User", u["email"])
+		user.user_type = ""
+		user.save()
+		frappe.db.commit()
+
+
+def dismiss_onboarding():
+	for m in frappe.get_all("Module Onboarding"):
+		frappe.db.set_value("Module Onboarding", m, "is_complete", 1)

@@ -39,12 +39,17 @@ Full scope, configuration, and examples: **[Email Override](./sendmail-routes.md
 
 Assignment email uses the same path as other Notification Log types: Frappe creates a **`type: Assignment`** log, then **`send_notification_email`** runs. Configure a **Notification** with **Email Override** = **Assignment** to route delivery (Email, Slack DM, Teams DM, etc.).
 
+### Sliding Window Notification Batching
+
+Assignment notifications can be batched into periodic digest emails instead of sent individually. See [Sliding Window Notification Batching](./sliding_window_notification_batching.md) for configuration and architecture details.
+
 ## Phone helpers
 
 **`communications.communications.communications`** exposes **`start_phone_call`** (whitelisted stub). **`validate_phone_number`** and **`validate_data_fields`** implement a North-American-style phone pattern and optional **Data** field checks; they are available for reuse.
 
 ## Related
 
+- [Sliding Window Notification Batching](./sliding_window_notification_batching.md)
 - [Email Override](./sendmail-routes.md)
 - [Public Calendar Features](./calendar.md)
 - [Video conferencing](./video-conferencing.md)
