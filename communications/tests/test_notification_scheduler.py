@@ -352,6 +352,7 @@ def test_digest_routed_through_email_override():
 			"subject": "Test Override",
 			"message": "{{ sendmail_message }}",
 			"channel": "Email",
+			"document_type": "Event",
 			"enabled": 1,
 			"email_override": "Mention, Assignment, Share, Energy Point, Alert",
 		}
@@ -401,6 +402,7 @@ def test_individual_notification_routed_through_email_override():
 			"subject": "Test Override",
 			"message": "{{ sendmail_subject }}",
 			"channel": "Email",
+			"document_type": "Event",
 			"enabled": 1,
 			"email_override": "Mention, Assignment, Share, Energy Point, Alert",
 		}
