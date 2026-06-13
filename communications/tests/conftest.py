@@ -43,5 +43,6 @@ def db_instance():
 	os.chdir(sites)
 	frappe.init(site=currentsite, sites_path=sites)
 	frappe.connect()
+	frappe.flags.in_test = True
 	frappe.db.commit = MagicMock()
 	yield frappe.db
