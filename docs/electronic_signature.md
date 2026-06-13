@@ -3,6 +3,11 @@ For license information, please see license.txt-->
 
 # Electronic Signature and desk connections
 
+<div class="byline">
+  Tyler Matteson 2026-05-07
+</div>
+
+
 **Electronic Signature** can reference any document via **Reference DocType** and **Reference Name** (a Dynamic Link). The Communications app does **not** ship hard-coded links from specific doctypes (for example **Task**) to **Electronic Signature**, because each site chooses which business objects participate in signing.
 
 ## Recommended: Document Links (customization)
@@ -15,8 +20,7 @@ Add a **Document Link** on each doctype where users should see related signature
    - **Link DocType**: `Electronic Signature`
    - **Link Fieldname**: `reference_name` (this is the Dynamic Link field on **Electronic Signature**)
    - **Group**: any label you want in the connections sidebar (e.g. `Signatures`)
-
-Export customizations to your app (with **Export Customization** / `sync_on_migrate`) so the link is version-controlled. Lucent ERP includes an example for **Task** in `lucent_erp/lucent_erp/custom/task.json` under the `links` key. That row is applied on **`bench migrate`** only if the **Electronic Signature** DocType exists (Communications installed on the site); otherwise skip or install Communications first.
+4. Export customizations to your app (with **Export Customization** / `sync_on_migrate`) so the link is version-controlled.
 
 If your bench cannot sync a `links` row from JSON (for example validation differences), add the Document Link once in **Customize Form** and re-export so the file includes the generated **`name`** and any **`links_order`** property setter Frappe creates.
 
@@ -47,3 +51,9 @@ This is optional and belongs in the customer or vertical app (not Communications
 ## Related
 
 - [Desk integrations (notifications, etc.)](./integrations.md)
+
+## Other Configuration Notes
+
+A "Send for Signatures" action is available when the Electronic Signature document is in "Draft" or "Out for Signatures" status. This action creates an email composer for each signer in the Signatures table, including a magic link to automatically log in and access the document in the email body. At this point, the document should be set to "Out for Signatures" status, as a portal user won't be able to see a document in "Draft" status. From here, they can view and execute the document, as rendered by the print format.
+
+Once all users in the Signatures section have executed the document, the status automatically changes to "Completed".
