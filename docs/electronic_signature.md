@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Electronic Signature and desk connections
 
 <div class="byline">
-  Tyler Matteson 2026-05-07
+  Heather Kusmierz and Tyler Matteson 2026-06-13
 </div>
 
 
@@ -52,8 +52,14 @@ This is optional and belongs in the customer or vertical app (not Communications
 
 - [Desk integrations (notifications, etc.)](./integrations.md)
 
-## Other Configuration Notes
+## Email Signature Invitations and Portal Access Configuration
 
-A "Send for Signatures" action is available when the Electronic Signature document is in "Draft" or "Out for Signatures" status. This action creates an email composer for each signer in the Signatures table, including a magic link to automatically log in and access the document in the email body. At this point, the document should be set to "Out for Signatures" status, as a portal user won't be able to see a document in "Draft" status. From here, they can view and execute the document, as rendered by the print format.
+A "Send for Signatures" action is available when the Electronic Signature document is in "Draft" or "Out for Signatures" status. This action creates an email composer for each signer in the Signatures table. The composer expects an Email Template to exist with the name "Electronic Signature Request", which is created on installation of the Communications app and may be edited as-needed.
+
+The email body can include a one-time login magic link for the user to directly access the document in the email body. First, "Login with Email Link" must be enabled in System Settings. Second, the "MAGIC_LINK" text must be present in the body of the "Electronic Signature Request" Email Template for the functionality to work. For the link to land on the signing page after login, the site must honor the `redirect-to` query parameter on the login-key handler. Frappe core may not apply that redirect; one option to implement this is by overriding `frappe.www.login.login_via_key`.
+
+At this point, the document should be set to "Out for Signatures" status, as a portal user won't be able to see a document in "Draft" status. From here, they can view and execute the document, as rendered by the print format.
+
+To have a dedicated menu item in the Portal sidebar for users to see the "Sign" endpoint, that may be added in "Portal Settings" in the "Custom Sidebar Menu" table.
 
 Once all users in the Signatures section have executed the document, the status automatically changes to "Completed".

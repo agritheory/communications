@@ -7,7 +7,7 @@ Electronic signature invitations and magic login links.
 ``get_magic_link`` builds a one-time login URL when **Login with Email Link** is enabled
 in System Settings. For the link to land on the signing page after login, the site must
 honor the ``redirect-to`` query parameter on the login-key handler. Frappe core may not
-apply that redirect; washmoreerp implements this by overriding
+apply that redirect; one option to implement this is by overriding
 ``frappe.www.login.login_via_key``. Sites using the signing portal can copy that pattern
 into their own app if needed.
 """
