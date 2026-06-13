@@ -148,14 +148,15 @@ def test_priority_doctype_bypasses_batching():
 	config.save()
 
 	task = frappe.get_doc({"doctype": "Task", "subject": "Test Task for Priority"}).insert()
-	assign_user(
-		{
-			"doctype": "Task",
-			"name": task.name,
-			"assign_to": [TEST_USER],
-			"description": "Test assignment",
-		}
-	)
+	with patch("frappe.sendmail", side_effect=Exception("No mail server configured")):
+		assign_user(
+			{
+				"doctype": "Task",
+				"name": task.name,
+				"assign_to": [TEST_USER],
+				"description": "Test assignment",
+			}
+		)
 
 	queue_entries = frappe.get_all(
 		"Assignment Notification Queue", filters={"reference_name": task.name}
