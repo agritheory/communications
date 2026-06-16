@@ -5,6 +5,39 @@ For license information, please see license.txt-->
 
 <!-- version list -->
 
+## v15.8.1 (2026-06-16)
+
+### Continuous Integration
+
+- Add assets.json, needed in esig render test
+  ([`ab885a9`](https://github.com/agritheory/communications/commit/ab885a9a7313ed64e6acc8a331fe13209a8a212a))
+
+- Install poetry
+  ([`deec51e`](https://github.com/agritheory/communications/commit/deec51edb5858c20eeae86795710046c0e5ae80b))
+
+### Documentation
+
+- Add email/portal config
+  ([`c867f21`](https://github.com/agritheory/communications/commit/c867f21ce73bfdfbb947b6afd4eabdf38bb0114a))
+
+- Remove client reference, add other config
+  ([`e5fc715`](https://github.com/agritheory/communications/commit/e5fc715027ba86c595e89d91a8b52902ec5e33c0))
+
+### Testing
+
+- Add notification document_type to avoid redis cache error
+  ([`0b7659c`](https://github.com/agritheory/communications/commit/0b7659cf29f5edaa7d654392db4d737d43eb1738))
+
+- Add patches so code reaches tested except/error log blocks
+  ([`8b5b233`](https://github.com/agritheory/communications/commit/8b5b2337b4d32784b35c4947c9b84ae3cba1c8a4))
+
+- Set in_test flag
+  ([`512b768`](https://github.com/agritheory/communications/commit/512b7680384e21dbf9337ffcc92cd080d87021ab))
+
+- Use patch for consistent sendmail behavior w or wout smtp setup
+  ([`80d742b`](https://github.com/agritheory/communications/commit/80d742b693fa2d05e78652a1855eb554fa406287))
+
+
 ## v15.8.0 (2026-06-12)
 
 ### Documentation
