@@ -206,7 +206,12 @@ def send_event_notification(
 				attachments=attachments,
 				reference_doctype="Event",
 				reference_name=event.name,
-				now=True,
+				# In normal/dev usage we want an Email Queue row (no SMTP required) so support
+				# can inspect outgoing notifications without a mail server.
+				# In tests, frappe.flags.in_test is True and Email Queue send() is suppressed
+				# unless frappe.flags.testing_email is also True; sending immediately keeps
+				# existing test expectations intact when they explicitly enable it.
+				now=bool(getattr(frappe.flags, "in_test", False)),
 			)
 		except OutgoingEmailError:
 			frappe.log_error(

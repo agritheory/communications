@@ -69,6 +69,9 @@ jobs:
       - name: Install App Dependencies
         run: bash ${{ github.workspace }}/.github/helper/install_dependencies.sh
 
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
       - name: Install Bench Site and Apps
         env:
           MYSQL_HOST: 'localhost'
@@ -80,8 +83,10 @@ jobs:
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
         run: |
+          set -o pipefail
           source env/bin/activate
           cd apps/communications
+          poetry install
           pytest --cov=communications --cov-report=xml -s | tee pytest-coverage.txt
 
       - name: Pytest coverage comment

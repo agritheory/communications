@@ -53,6 +53,12 @@ bench start &> bench_run_logs.txt &
 CI=Yes &
 bench --site test_site reinstall --yes --admin-password admin
 
+# Create a minimal assets manifest so that frappe.get_print can render
+# printview.html (which calls include_style → get_assets_json) without
+# crashing when the bench was initialised with --skip-assets.
+mkdir -p ~/frappe-bench/sites/assets
+echo '{}' > ~/frappe-bench/sites/assets/assets.json
+
 bench setup requirements --dev
 
 echo "BENCH VERSION NUMBERS:"

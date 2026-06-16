@@ -8,7 +8,7 @@ app_description = "Messaging and telephony extensions for Frappe"
 app_email = "support@agritheory.dev"
 app_license = "mit"
 
-# required_apps = []
+required_apps = ["erpnext", "hrms"]
 
 # add_to_apps_screen = [
 # 	{
@@ -20,9 +20,11 @@ app_license = "mit"
 # 	}
 # ]
 
-# app_include_css = "/assets/communications/css/communications.css"
+# Desk JS: there is no communications.bundle.js entry. Phone ControlData + formatter ship as
+# public/js/teams.bundle.js (esbuild discovers *.bundle.js under public/). Website calendar uses
+# web_include_js below, not app_include_js.
 app_include_js = [
-	"communications.bundle.js",
+	"teams.bundle.js",
 ]
 app_include_css = ["/assets/communications/css/public_calendar.css"]
 
@@ -61,6 +63,7 @@ jinja = {
 
 # before_install = "communications.install.before_install"
 after_install = "communications.communications.install.after_install"
+after_migrate = "communications.communications.install.after_migrate"
 
 # before_uninstall = "communications.uninstall.before_uninstall"
 # after_uninstall = "communications.uninstall.after_uninstall"
@@ -84,6 +87,17 @@ after_install = "communications.communications.install.after_install"
 override_doctype_class = {
 	"Notification": "communications.communications.overrides.notification.CommunicationsNotification",
 }
+
+has_permission = {
+	"Electronic Signature": "communications.communications.doctype.electronic_signature.electronic_signature.has_electronic_signature_permission",
+}
+
+website_route_rules = [
+	{"from_route": "/electronic_signature/<name>", "to_route": "electronic_signature/[name]"},
+	{"from_route": "/electronic_signature", "to_route": "electronic_signature"},
+	{"from_route": "/sign/<name>", "to_route": "electronic_signature/[name]"},
+	{"from_route": "/sign", "to_route": "electronic_signature"},
+]
 
 doc_events = {
 	"Event": {

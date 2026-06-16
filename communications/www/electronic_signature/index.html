@@ -1,0 +1,49 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block header %}<h1>{{ title }}</h1>{% endblock %}
+
+{% block page_content %}
+<div class="electronic-signature-list">
+	{% if guest %}
+	<p class="alert alert-info">{{ _("Please log in to see documents available for you to sign.") }}</p>
+	<p><a class="btn btn-primary" href="/login?redirect-to={{ signature_base }}">{{ _("Log in") }}</a></p>
+	{% elif signatures %}
+	<div class="table-responsive">
+		<table class="table table-hover">
+			<thead>
+				<tr>
+					<th>{{ _("Document") }}</th>
+					<th>{{ _("Title") }}</th>
+					<th>{{ _("Status") }}</th>
+					<th>{{ _("Reference") }}</th>
+					<th>{{ _("Updated") }}</th>
+					<th>{{ _("Action") }}</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for row in signatures %}
+				<tr>
+					<td><a href="{{ signature_base }}/{{ row.name }}">{{ row.name }}</a></td>
+					<td>{{ row.title or "" }}</td>
+					<td>{{ row.status or "" }}</td>
+					<td>{% if row.reference_doctype and row.reference_name %}{{ row.reference_doctype }} · {{ row.reference_name }}{% else %}—{% endif %}</td>
+					<td>{{ frappe.utils.format_datetime(row.modified) if row.modified else "" }}</td>
+					<td>
+						{% if row.needs_signature %}
+						<a class="btn btn-sm btn-primary" href="{{ signature_base }}/{{ row.name }}">{{ _("Sign") }}</a>
+						{% else %}
+						<a class="btn btn-sm btn-outline-secondary" href="{{ signature_base }}/{{ row.name }}">{{ _("View") }}</a>
+						{% endif %}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	{% else %}
+	<div class="alert alert-info">{{ _("No documents are available for you to sign right now.") }}</div>
+	{% endif %}
+</div>
+{% endblock %}

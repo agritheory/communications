@@ -1,0 +1,248 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block header %}<h1>{{ title }}</h1>{% endblock %}
+
+{% block page_content %}
+<article class="electronic-signature-detail">
+	<div class="row justify-content-center">
+		<div class="col-12 col-lg-11">
+			<section class="card">
+				<div class="card-body px-3 px-md-4 py-4">
+					{% if electronic_signature.introduction %}
+					<section class="mb-3">
+						{{ electronic_signature.introduction }}
+					</section>
+					<hr>
+					{% endif %}
+					{% if electronic_signature.document_html %}
+					<section class="document-section mb-4">
+						<div class="es-document-print-frame">
+							<div class="document-html es-document-html">
+								{{ electronic_signature.document_html | safe }}
+							</div>
+						</div>
+					</section>
+					<hr>
+					{% endif %}
+					{% if electronic_signature.signers and electronic_signature.signers|length > 0 %}
+					<section class="signatures-section">
+						<h4>{{ _("Signatures") }}</h4>
+						<div class="signatures-container">
+							{% for signature in electronic_signature.signers %}
+							<article class="signature-item card mb-4">
+								<div class="card-body">
+									<div class="row">
+										<div class="col-lg-4 col-md-12 mb-3">
+											<div class="signature-info">
+												<p><strong>{{ _("Party") }}:</strong> {{ signature.contact_name }}</p>
+												<p><strong>{{ _("Email") }}:</strong> {{ signature.email }}</p>
+												<p><strong>{{ _("Executed At") }}:</strong> {{
+													frappe.utils.format_datetime(signature.executed_at) if signature.executed_at else _("Not set")
+													}}</p>
+											</div>
+										</div>
+										<div class="col-lg-8 col-md-12">
+											{% if signature.email == active_signer_email %}
+											<div class="signature-form">
+												{% if not signature.executed_at %}
+												<div class="signature-pad signature-pad-inline" data-contact="{{ signature.contact }}"
+													data-contact-name="{{ signature.contact_name }}"></div>
+												<input type="hidden" class="signature-data" name="signature_data_{{ signature.contact }}">
+												<div class="signature-actions mt-2">
+													<button type="button" class="btn btn-sm btn-secondary clear-signature-btn">{{ _("Clear")
+														}}</button>
+													<button type="button" class="btn btn-sm btn-primary sign-signature-btn">{{ _("Sign")
+														}}</button>
+												</div>
+												{% endif %}
+											</div>
+											{% else %}
+											<div class="signature-display">
+												{% if signature.executed_at and signature.signature %}
+												<figure class="signature-image">
+													<img src="{{ signature.signature }}" alt="{{ _("Signature of") }} {{ signature.contact_name }}"
+														class="img-fluid">
+												</figure>
+												{% endif %}
+											</div>
+											{% endif %}
+										</div>
+									</div>
+								</div>
+							</article>
+							{% endfor %}
+						</div>
+					</section>
+					{% endif %}
+				</div>
+			</section>
+		</div>
+	</div>
+</article>
+{% endblock %}
+
+{% block script %}
+<script src="/assets/frappe/js/lib/jSignature.min.js"></script>
+<script>
+	frappe.ready(function () {
+		if (typeof jQuery.fn.jSignature === 'undefined') {
+			alert("{{ _('Signature component not loaded properly. Please refresh the page.') }}");
+			return;
+		}
+
+		$(".signature-pad-inline").each(function () {
+			var $this = $(this);
+
+			try {
+				$this.jSignature({
+					'UndoButton': false,
+					'lineWidth': 1,
+					'height': '150px',
+					'width': '100%'
+				});
+			} catch (e) {
+				console.error("Error initializing signature pad:", e);
+			}
+
+			var $container = $this.closest('.signature-form');
+
+			$container.find('.clear-signature-btn').on('click', function () {
+				try {
+					$this.jSignature("reset");
+				} catch (e) {
+					console.error("Error clearing signature:", e);
+				}
+			});
+
+			$container.find('.sign-signature-btn').on('click', function () {
+				var signatureData;
+				try {
+					signatureData = $this.jSignature("getData");
+				} catch (e) {
+					console.error("Error getting signature data:", e);
+					return;
+				}
+
+				if (!signatureData || $this.jSignature("getData", "native").length === 0) {
+					frappe.msgprint("{{ _('Please provide your signature') }}");
+					return;
+				}
+
+				frappe.call({
+					method: "communications.www.electronic_signature.add_signature",
+					args: {
+						electronic_signature_name: "{{ electronic_signature.name }}",
+						signature_data: signatureData
+					},
+					callback: function (r) {
+						if (r.message && r.message.success) {
+							frappe.show_alert({
+								message: "{{ _('Signed successfully') }}",
+								indicator: "green"
+							});
+							setTimeout(function () {
+								window.location.reload();
+							}, 1000);
+						} else {
+							frappe.msgprint("{{ _('Error signing. Please try again.') }}");
+						}
+					},
+					error: function () {
+						frappe.msgprint("{{ _('Error connecting to the server. Please try again.') }}");
+					}
+				});
+			});
+		});
+	});
+</script>
+{% endblock %}
+
+<style>
+	.electronic-signature-detail {
+		margin-bottom: 2rem;
+	}
+
+	/* One column for heading + embed: horizontal rhythm matches print preview gutter (Frappe standard.css). */
+	.es-document-print-frame {
+		box-sizing: border-box;
+		width: 100%;
+		max-width: 100%;
+		margin-left: auto;
+		margin-right: auto;
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
+	}
+
+	@media (min-width: 768px) {
+		.es-document-print-frame {
+			padding-left: 1.25rem;
+			padding-right: 1.25rem;
+		}
+	}
+
+	@media (min-width: 992px) {
+		.es-document-print-frame {
+			padding-left: 1.5rem;
+			padding-right: 1.5rem;
+		}
+	}
+
+	.document-html.es-document-html .print-format-gutter {
+		box-sizing: border-box;
+	}
+
+	.document-html.es-document-html .action-banner {
+		display: none !important;
+	}
+
+	.signature-pad {
+		border: 1px dashed #ccc;
+		border-radius: 5px;
+		background-color: #f9f9f9;
+		margin-bottom: 0.75rem;
+		max-width: 100%;
+		touch-action: none;
+	}
+
+	.signature-image img {
+		max-width: 100%;
+		height: auto;
+		border: 1px solid #eee;
+		padding: 5px;
+		border-radius: 4px;
+	}
+
+	.signature-item {
+		transition: all 0.3s ease;
+		border: none;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	.signature-actions {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.signature-info p {
+		margin-bottom: 0.5rem;
+		word-break: break-word;
+	}
+
+	@media (max-width: 576px) {
+		.signature-actions {
+			justify-content: center;
+		}
+
+		.signature-actions button {
+			flex: 1;
+			min-width: 80px;
+		}
+
+		.signature-pad {
+			height: 120px !important;
+		}
+	}
+</style>
