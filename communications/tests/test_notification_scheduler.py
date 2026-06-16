@@ -141,6 +141,10 @@ def test_multiple_assignments_share_window_key():
 
 
 def test_priority_doctype_bypasses_batching():
+	"""Priority doctypes bypass batching: the queue entry is created with bypass_batching=1
+	and send_individual_notification is called immediately. When the send fails the status
+	must be 'Failed' and an error must be logged — regardless of whether a mail server is
+	configured in site_config."""
 	config = frappe.get_single("Notification Window Settings")
 	config.enabled = 1
 	config.bypass_batching_for_priority = 1
@@ -148,7 +152,13 @@ def test_priority_doctype_bypasses_batching():
 	config.save()
 
 	task = frappe.get_doc({"doctype": "Task", "subject": "Test Task for Priority"}).insert()
-	with patch("frappe.sendmail", side_effect=Exception("No mail server configured")):
+
+	# Patch frappe.sendmail to raise and try_email_override to return False so the full
+	# dispatcher failure-handling path runs (status -> "Failed", error logged) regardless
+	# of whether a real mail server is configured in site_config.
+	with patch("frappe.sendmail", side_effect=Exception("Simulated send failure")), patch(
+		"communications.notification_scheduler.dispatcher.try_email_override", return_value=False
+	):
 		assign_user(
 			{
 				"doctype": "Task",
