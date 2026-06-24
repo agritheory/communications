@@ -15,7 +15,7 @@ homepage = "https://github.com/agritheory/communications"
 repository = "https://github.com/agritheory/communications"
 source = "https://github.com/agritheory/communications"
 changelog = "https://github.com/agritheory/communications/CHANGELOG.md"
-documentation = "https://github.com/agritheory/communications/tree/version-15/docs"
+documentation = "https://github.com/agritheory/communications/tree/version-15/communications/docs"
 issues = "https://github.com/agritheory/communications/issues"
 
 [build-system]

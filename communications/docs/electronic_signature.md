@@ -1,7 +1,7 @@
 <!-- Copyright (c) 2026, AgriTheory and contributors
 For license information, please see license.txt-->
 
-# Electronic Signature and desk connections
+# Electronic Signature
 
 <div class="byline">
   Heather Kusmierz and Tyler Matteson 2026-06-13
@@ -48,10 +48,6 @@ For a site that wants to keep only the Dynamic Link fields and still set `dynami
 
 This is optional and belongs in the customer or vertical app (not Communications).
 
-## Related
-
-- [Desk integrations (notifications, etc.)](./integrations.md)
-
 ## Email Signature Invitations and Portal Access Configuration
 
 A "Send for Signatures" action is available when the Electronic Signature document is in "Draft" or "Out for Signatures" status. This action creates an email composer for each signer in the Signatures table. The composer expects an Email Template to exist with the name "Electronic Signature Request", which is created on installation of the Communications app and may be edited as-needed.
@@ -63,3 +59,16 @@ At this point, the document should be set to "Out for Signatures" status, as a p
 To have a dedicated menu item in the Portal sidebar for users to see the "Sign" endpoint, that may be added in "Portal Settings" in the "Custom Sidebar Menu" table.
 
 Once all users in the Signatures section have executed the document, the status automatically changes to "Completed".
+
+## Whitelisted API methods
+
+| Method | Auth | Purpose |
+|--------|------|---------|
+| `communications.www.electronic_signature.add_signature` | Logged-in user | Submit a signature from the portal |
+| `communications.communications.signatures.fetch_signature_invitation_email` | Desk user | Compose signature invitation email for **Send for Signatures** |
+
+Portal routes: `/sign`, `/sign/<name>`, `/electronic_signature` (see `website_route_rules` in `hooks.py`).
+
+## Related
+
+- [Notification Channels](./notification_channels.md)

@@ -1,7 +1,7 @@
 <!-- Copyright (c) 2026, AgriTheory and contributors
 For license information, please see license.txt-->
 
-# Public Calendar Features
+# Public Calendar
 
 <div class="byline">
   Tyler Matteson 2026-06-02
@@ -135,7 +135,7 @@ Bookings created from `/schedule` set **`reference_doctype`** = `Public Calendar
 
 Registered on **Event** in `hooks.py`:
 
-- **`validate`** - Video conferencing (Zoom / Communications Google Meet provider). See [Video conferencing](./video-conferencing.md).
+- **`validate`** - Video conferencing (Zoom / Communications Google Meet provider). See [Video Conferencing](./video_conferencing.md).
 - **`on_update`** - If the Event is tied to a Public Calendar: detects **cancel** or **reschedule** (time change) and sends the appropriate notifications.
 - **`on_trash`** - Deletes provider meetings when configured, then sends cancellation notifications for Public Calendar events when settings allow.
 
@@ -182,7 +182,7 @@ The schedule **`get_events`** method is whitelisted for **Guest**; the **`/sched
 
 ### Cancel appointment
 
-**Method:** `communications.communications.communications.api.cancel_appointment`
+**Method:** `communications.communications.api.cancel_appointment`
 
 **Parameters:**
 - `event` (str) - Event document name
@@ -202,7 +202,7 @@ The schedule **`get_events`** method is whitelisted for **Guest**; the **`/sched
 
 ### Event — video conferencing
 
-Communications adds **Video Conference Provider**, **Meeting ID**, **Meeting URL**, and **Meeting Data** on **Event**. See [Video conferencing](./video-conferencing.md).
+Communications adds **Video Conference Provider**, **Meeting ID**, **Meeting URL**, and **Meeting Data** on **Event**. See [Video Conferencing](./video_conferencing.md).
 
 ### Event Participants — RSVP
 
@@ -223,8 +223,8 @@ Default notifications are created automatically during app installation:
 
 ## Other app behavior
 
-- **Notification DocType** — class override `CommunicationsNotification` (see `hooks.py` → `override_doctype_class`).
-- **Desk assignment emails** — configure a **Notification** with **Email Override** = **Assignment** to route assignment Notification Log email to Slack DM, Teams DM, etc. See [Email Override](./sendmail-routes.md).
+- **Notification DocType** — class override `CommunicationsNotification` (see `hooks.py` → `override_doctype_class`). See [Notification Channels](./notification_channels.md).
+- **Desk assignment emails** — configure a **Notification** with **Email Override** = **Assignment** to route assignment Notification Log email to Slack DM, Teams DM, etc. See [Email Override](./email_override.md).
 
 ## Migration Notes
 
@@ -240,9 +240,10 @@ This module was migrated from the `public_calendar` app. Python modules under th
 | `public_calendar.www.calendar` | `communications.www.calendar` |
 | `public_calendar.www.schedule` | `communications.www.schedule` |
 | `public_calendar.www.rsvp` | `communications.www.rsvp` |
-| `public_calendar.public_calendar.api` (if used) | `communications.communications.communications.api` |
+| `public_calendar.public_calendar.api` (if used) | `communications.communications.api` |
 
-## Related documentation
+## Related
 
-- [Video conferencing and Appointment Settings](./video-conferencing.md)
-- [Desk notifications and chat integrations](./integrations.md)
+- [Video Conferencing](./video_conferencing.md)
+- [Notification Channels](./notification_channels.md)
+- [Email Override](./email_override.md)

@@ -1,7 +1,7 @@
 # Copyright (c) 2026, AgriTheory and contributors
 # For license information, please see license.txt
 
-"""Frappe sendmail intercept patches for Email Override. See docs/sendmail-routes.md."""
+"""Frappe sendmail intercept patches for Email Override. See docs/email_override.md."""
 
 import frappe
 
