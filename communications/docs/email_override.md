@@ -126,4 +126,7 @@ Starter rows (**Document Follow Override**, **Workflow Action Override**, **Even
 
 ## Related
 
-- [Desk notifications and chat integrations](./integrations.md)
+- [Notification Channels](./notification_channels.md)
+- [Assignment Notification Batching](./notification_batching.md)
+- [Slack DM Setup](./slack_setup.md)
+- [Teams DM Setup](./teams_setup.md)
