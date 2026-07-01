@@ -45,7 +45,28 @@ EVENT_DIGEST_MESSAGE = """\
 {% if event.description %}{{ event.description | striptags }}{% endif %}
 {% endfor %}"""
 
+NOTIFICATION_LOG_MESSAGE = """\
+{% if sendmail_notification_log_type == "Assignment" %}
+{{ sendmail_subject }}
+{% if sendmail_message %}{{ sendmail_message | striptags }}{% endif %}
+{% elif sendmail_notification_log_type == "Mention" %}
+{{ sendmail_from_user }} mentioned you: {{ sendmail_message | striptags }}
+{% elif sendmail_notification_log_type == "Share" %}
+{{ sendmail_subject }}
+{% else %}
+{{ sendmail_subject }}
+{% if sendmail_message %}{{ sendmail_message | striptags }}{% endif %}
+{% endif %}"""
+
+NOTIFICATION_LOG_OVERRIDE = "Notification Log Override"
+
 DEFAULT_EMAIL_OVERRIDE_NOTIFICATIONS = (
+	{
+		"name": NOTIFICATION_LOG_OVERRIDE,
+		"email_override": "Mention, Assignment, Share, Energy Point, Alert",
+		"subject": "Desk notification",
+		"message": NOTIFICATION_LOG_MESSAGE,
+	},
 	{
 		"name": "Document Follow Override",
 		"email_override": "Document Follow",

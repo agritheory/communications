@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Email Override
 
 <div class="byline">
-  Tyler Matteson 2026-06-03
+  Tyler Matteson 2026-06-24
 </div>
 
 On app import, **`communications/communications/communications/email_override_patches.py`** applies **targeted patches** to Frappe email emitters so selected outbound emails can be handled by **Notification** records (via **`CommunicationsNotification`**) instead of stock **`frappe.sendmail`**.
@@ -122,7 +122,7 @@ Route recipients from the intercepted call override **Notification Recipient** r
 - **Channel:** Slack DM  
 - **Message:** loop `sendmail_events` (`starts_on`, `subject`, `description`)
 
-Starter rows (**Document Follow Override**, **Workflow Action Override**, **Event Digest Override**) are created on install with **`enabled = 0`**. Set **Channel**, webhook, enable, and adjust templates in Desk.
+Starter rows (**Notification Log Override**, **Document Follow Override**, **Workflow Action Override**, **Event Digest Override**) are created on install with **`enabled = 0`**. Set **Channel**, webhook, enable, and adjust templates in Desk.
 
 ## Related
 

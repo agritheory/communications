@@ -21,6 +21,7 @@ def after_install():
 
 def after_migrate():
 	"""Ensure optional records exist after schema changes."""
+	create_default_email_override_notifications()
 	create_electronic_signature_email_template()
 
 
