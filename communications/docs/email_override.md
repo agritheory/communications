@@ -4,7 +4,7 @@ For license information, please see license.txt-->
 # Email Override
 
 <div class="byline">
-  Tyler Matteson 2026-06-03
+  Tyler Matteson 2026-06-25
 </div>
 
 On app import, **`communications/communications/communications/email_override_patches.py`** applies **targeted patches** to Frappe email emitters so selected outbound emails can be handled by **Notification** records (via **`CommunicationsNotification`**) instead of stock **`frappe.sendmail`**.
@@ -78,7 +78,8 @@ Route recipients from the intercepted call override **Notification Recipient** r
 3. Set **Email Override** to the intended value; configure **Channel**, message template, webhook links.
 4. **`document_type`**, **`event`**, and **Recipients** are optional when **Email Override** is set (recipients come from the intercepted sendmail call).
 5. Put Jinja in **Message**, not **Subject**. Notification uses **Subject** as its title field; if someone assigns this Notification record, raw `{{ … }}` in Subject is inserted into Frappe’s stock assignment/share/mention sentences unchanged. Use **`{{ sendmail_subject }}`** in Message for the rendered desk notification text.
-6. Restart workers after changes (cache is per-process).
+6. For Slack DM or Teams DM overrides, enable **Send System Notification** when you also want desk **Notification Log** entries (assignments, document follow, mentions, etc.).
+7. Restart workers after changes (cache is per-process).
 
 ## Example
 
@@ -109,6 +110,7 @@ Route recipients from the intercepted call override **Notification Recipient** r
 - **Channel:** Slack DM  
 - **Subject:** plain text (e.g. `Document Follow`)  
 - **Message:** use `sendmail_docinfo` and `sendmail_timeline` (see **Document Follow Override** installed by Communications, disabled by default)
+- **Send System Notification:** enable to create in-app **Notification Log** entries for followed users when email is routed to Slack DM or Teams DM (recipients come from the intercepted sendmail call, not **Recipients** on the Notification row)
 
 **Workflow Action → Slack DM:**
 
