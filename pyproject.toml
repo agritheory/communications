@@ -2,13 +2,19 @@
 name = "communications"
 version = "15.9.0"
 description = "Messaging and telephony extensions for Frappe"
-authors = [
-    { name = "AgriTheory", email = "support@agritheory.dev"}
-]
 readme = "README.md"
-license = { file = "LICENSE" }
-requires-python = ">=3.10"
-dynamic = ["dependencies"]
+requires-python = ">=3.14,<3.15"
+dynamic = [ "dependencies",]
+[[project.authors]]
+name = "AgriTheory"
+email = "support@agritheory.dev"
+
+[build-system]
+requires = [ "poetry-core",]
+build-backend = "poetry.core.masonry.api"
+
+[project.license]
+file = "LICENSE"
 
 [project.urls]
 homepage = "https://github.com/agritheory/communications"
@@ -17,33 +23,6 @@ source = "https://github.com/agritheory/communications"
 changelog = "https://github.com/agritheory/communications/CHANGELOG.md"
 documentation = "https://github.com/agritheory/communications/tree/version-15/communications/docs"
 issues = "https://github.com/agritheory/communications/issues"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.dependencies]
-python = "^3.10"
-slack-sdk = "^3.39.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.5"
-pytest-cov = "^6.0.0"
-pytest-order = "^1.2.1"
-mypy = "^1.15.0"
-
-[tool.bench.frappe-dependencies]
-frappe = ">=15.0.0,<16.0.0"
-erpnext = ">=15.0.0,<16.0.0"
-
-[tool.bench.dev-dependencies]
-mypy = "~=1.15.0"
-pytest = "~=8.3.5"
-pytest-cov = "~=6.0.0"
-pytest-order = "~=1.2.1"
-
-[tool.pytest.ini_options]
-addopts = "-s --disable-warnings"
 
 [tool.black]
 line-length = 99
@@ -58,15 +37,36 @@ ensure_newline_before_comments = true
 indent = "\t"
 
 [tool.semantic_release]
-version_toml = ["pyproject.toml:project.version"]
-version_variables = [
-    "communications/__init__.py:__version__"
-]
+version_toml = [ "pyproject.toml:project.version",]
+version_variables = [ "communications/__init__.py:__version__",]
 build_command = "echo 1"
-
-[tool.semantic_release.branches.version]
-match = "version-(15|16)"
 
 [tool.codespell]
 skip = "CHANGELOG.md"
 ignore-words-list = "notin,Greif"
+
+[tool.poetry.dependencies]
+python = ">=3.14,<3.15"
+slack-sdk = "^3.39.0"
+
+[tool.bench.frappe-dependencies]
+frappe = ">=16.0.0-dev,<17.0.0"
+erpnext = ">=15.0.0,<16.0.0"
+
+[tool.bench.dev-dependencies]
+mypy = "~=1.15.0"
+pytest = "~=8.3.5"
+pytest-cov = "~=6.0.0"
+pytest-order = "~=1.2.1"
+
+[tool.pytest.ini_options]
+addopts = "-s --disable-warnings"
+
+[tool.semantic_release.branches.version]
+match = "version-(15|16)"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+pytest-cov = "^6.0.0"
+pytest-order = "^1.2.1"
+mypy = "^1.15.0"
