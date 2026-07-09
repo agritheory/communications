@@ -19,18 +19,18 @@ pip install --upgrade pip
 pip install frappe-bench
 
 if [ "$DB" == "mariadb" ]; then
-  mysql --host 127.0.0.1 --port 3306 -u root -e "SET GLOBAL character_set_server = 'utf8mb4'"
-  mysql --host 127.0.0.1 --port 3306 -u root -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
-  mysql --host 127.0.0.1 --port 3306 -u root -e "CREATE OR REPLACE DATABASE test_site"
-  mysql --host 127.0.0.1 --port 3306 -u root -e "CREATE OR REPLACE USER 'test_site'@'localhost' IDENTIFIED BY 'test_site'"
-  mysql --host 127.0.0.1 --port 3306 -u root -e "GRANT ALL PRIVILEGES ON \`test_site\`.* TO 'test_site'@'localhost'"
-  mysql --host 127.0.0.1 --port 3306 -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'"  # match site_config
-  mysql --host 127.0.0.1 --port 3306 -u root -e "FLUSH PRIVILEGES"
+  mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
+  mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
+  mysql --host 127.0.0.1 --port 3306 -u root -proot -e "CREATE OR REPLACE DATABASE test_site"
+  mysql --host 127.0.0.1 --port 3306 -u root -proot -e "CREATE OR REPLACE USER 'test_site'@'localhost' IDENTIFIED BY 'test_site'"
+  mysql --host 127.0.0.1 --port 3306 -u root -proot -e "GRANT ALL PRIVILEGES ON \`test_site\`.* TO 'test_site'@'localhost'"
+  mysql --host 127.0.0.1 --port 3306 -u root -proot -e "FLUSH PRIVILEGES"
 fi
 
+BRANCH_NAME="${BRANCH_NAME:-version-16}"
 echo BRANCH_NAME: "${BRANCH_NAME}"
 git clone https://github.com/frappe/frappe --branch ${BRANCH_NAME}
-bench init frappe-bench --frappe-path ~/frappe --python "$(which python)" --skip-assets --ignore-exist
+bench init frappe-bench --frappe-path ~/frappe --python "$(which python)" --skip-assets --skip-redis-config-generation --ignore-exist
 
 mkdir ~/frappe-bench/sites/test_site
 if [ "$DB" == "postgres" ]; then
@@ -78,4 +78,4 @@ bench list-apps
 
 bench start &> bench_run_logs.txt &
 CI=Yes &
-bench execute 'communications.tests.setup.before_test'
+bench --site test_site execute 'communications.tests.setup.before_test'
