@@ -8,6 +8,7 @@ Installation hooks for Public Calendar.
 import frappe
 
 from communications.communications.email_override_defaults import (
+	configure_slack_dm_override_notifications,
 	create_default_email_override_notifications,
 )
 
@@ -22,6 +23,8 @@ def after_install():
 def after_migrate():
 	"""Ensure optional records exist after schema changes."""
 	create_electronic_signature_email_template()
+	create_default_email_override_notifications()
+	configure_slack_dm_override_notifications()
 
 
 def create_default_notifications():

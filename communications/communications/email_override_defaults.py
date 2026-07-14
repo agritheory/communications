@@ -45,7 +45,24 @@ EVENT_DIGEST_MESSAGE = """\
 {% if event.description %}{{ event.description | striptags }}{% endif %}
 {% endfor %}"""
 
+DESK_NOTIFICATION_LOG_MESSAGE = """\
+{% if sendmail_notification_log_type == "Assignment" %}
+{{ sendmail_subject }}
+{% elif sendmail_notification_log_type == "Mention" %}
+{{ sendmail_from_user }} mentioned you: {{ sendmail_message | striptags }}
+{% elif sendmail_notification_log_type == "Share" %}
+{{ sendmail_subject }}
+{% else %}
+{{ sendmail_subject }}
+{% endif %}"""
+
 DEFAULT_EMAIL_OVERRIDE_NOTIFICATIONS = (
+	{
+		"name": "Desk Notification Log Override",
+		"email_override": "Mention, Assignment, Share, Energy Point, Alert",
+		"subject": "Desk Notification",
+		"message": DESK_NOTIFICATION_LOG_MESSAGE,
+	},
 	{
 		"name": "Document Follow Override",
 		"email_override": "Document Follow",
@@ -91,3 +108,48 @@ def create_default_email_override_notifications():
 				**notification_data,
 			}
 		).insert(ignore_permissions=True)
+
+
+SLACK_DM_OVERRIDE_NAMES = (
+	"Desk Notification Log Override",
+	"Document Follow Override",
+)
+
+
+def get_default_slack_webhook_url() -> str | None:
+	"""Return the first Slack Webhook URL record name, if any."""
+	rows = frappe.get_all("Slack Webhook URL", pluck="name", limit=1, order_by="modified desc")
+	return rows[0] if rows else None
+
+
+def configure_slack_dm_override_notifications(slack_webhook_url: str | None = None) -> None:
+	"""Enable Slack DM routing for default email-override notifications when a webhook exists."""
+	if not frappe.db.has_column("Notification", "email_override"):
+		return
+
+	slack_webhook_url = slack_webhook_url or get_default_slack_webhook_url()
+	if not slack_webhook_url:
+		return
+
+	create_default_email_override_notifications()
+
+	for name in SLACK_DM_OVERRIDE_NAMES:
+		if not frappe.db.exists("Notification", name):
+			continue
+
+		# Channel is set_only_once on Notification; use db.set_value during migrate.
+		frappe.db.set_value(
+			"Notification",
+			name,
+			{
+				"channel": "Slack DM",
+				"slack_webhook_url": slack_webhook_url,
+				"enabled": 1,
+				"send_system_notification": 1,
+			},
+			update_modified=True,
+		)
+
+	from communications.communications.email_overrides import invalidate_email_override_cache
+
+	invalidate_email_override_cache()
