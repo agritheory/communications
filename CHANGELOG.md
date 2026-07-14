@@ -5,6 +5,19 @@ For license information, please see license.txt-->
 
 <!-- version list -->
 
+## v15.9.0 (2026-07-08)
+
+### Documentation
+
+- Update docs with index and expanded features
+  ([`c447fd9`](https://github.com/agritheory/communications/commit/c447fd9b56e929d5c24d9ebbbbc8a23964278cb9))
+
+### Features
+
+- Improve sendmail override setups
+  ([`e3ceddc`](https://github.com/agritheory/communications/commit/e3ceddcd39841cbc3e24c9944a03152ee5b72033))
+
+
 ## v15.8.1 (2026-06-16)
 
 ### Continuous Integration

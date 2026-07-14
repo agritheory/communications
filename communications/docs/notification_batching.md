@@ -1,13 +1,13 @@
 <!-- Copyright (c) 2026, AgriTheory and contributors
 For license information, please see license.txt-->
 
-# Sliding Window Notification Batching
+# Assignment Notification Batching
 
 <div class="byline">
   Francisco Roldan 2026-06-10
 </div>
 
-The **Sliding Window Notification Batching** feature collects assignment notifications over a configurable time window and delivers them as a single batched email digest instead of sending individual emails for each assignment. This reduces notification fatigue and respects user delivery hours.
+The **Assignment Notification Batching** feature collects assignment notifications over a configurable time window and delivers them as a single batched email digest instead of sending individual emails for each assignment. This reduces notification fatigue and respects user delivery hours.
 
 ## Overview
 
@@ -103,7 +103,7 @@ A daily scheduled task (`cleanup_old_queue_entries()`) removes **Sent** and **Fa
 
 ## Email Override Integration
 
-The sliding window notification system integrates with the **Email Override** feature (documented in [sendmail-routes.md](./sendmail-routes.md)) to route assignment notifications through configured **Notification** records.
+The sliding window notification system integrates with the **Email Override** feature (documented in [email_override.md](./email_override.md)) to route assignment notifications through configured **Notification** records.
 
 ### How it works
 
@@ -194,3 +194,8 @@ User Assignment
                     Update queue status --> Sent/Failed
                     WindowManager.clear_window()
 ```
+
+## Related
+
+- [Email Override](./email_override.md)
+- [Notification Channels](./notification_channels.md)

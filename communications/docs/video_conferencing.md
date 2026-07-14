@@ -1,7 +1,12 @@
 <!-- Copyright (c) 2026, AgriTheory and contributors
 For license information, please see license.txt-->
 
-# Video conferencing and Appointment Settings
+# Video Conferencing
+
+<div class="byline">
+  Tyler Matteson 2026-06-24
+</div>
+
 
 This app adds optional video meeting support on the **Event** doctype. It is separate from the **Public Calendar** booking flow: public bookings do not set a video provider automatically.
 
@@ -58,4 +63,4 @@ That path **does not** use Communications’ **Video Conference Provider** selec
 
 ## Related
 
-- [Public Calendar Features](./calendar.md) — scheduling, RSVP, notifications
+- [Public Calendar](./public_calendar.md)

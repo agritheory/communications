@@ -21,6 +21,7 @@ from communications.communications.doctype.teams_webhook_url.teams_webhook_url i
 	TeamsMessagingError,
 )
 from communications.communications.email_overrides import normalize_route_recipients
+from communications.communications.slack_markdown import convert_html_to_slack_mrkdwn
 
 # Error Log title field max 140 chars
 TEAMS_DM_LOG_TITLE = "Teams DM send failed"
@@ -350,10 +351,11 @@ class CommunicationsNotification(Notification):
 		)
 		slack_client = WebClient(token=slack_token)
 		doc_url = get_url_to_form(doc.doctype, doc.name)
+		text = convert_html_to_slack_mrkdwn(render_notification_template(self.message, context))
 		blocks = [
 			{
 				"type": "section",
-				"text": {"type": "mrkdwn", "text": render_notification_template(self.message, context)},
+				"text": {"type": "mrkdwn", "text": text},
 			},
 		]
 		if show_link:
@@ -374,7 +376,7 @@ class CommunicationsNotification(Notification):
 			slack_user_id = self.get_slack_user_id(recipient)
 			if slack_user_id:
 				try:
-					slack_client.chat_postMessage(channel=slack_user_id, blocks=blocks)
+					slack_client.chat_postMessage(channel=slack_user_id, blocks=blocks, text=text)
 				except Exception as e:
 					self.log_error("Failed to send Slack Notification", e)
 
@@ -430,25 +432,40 @@ class CommunicationsNotification(Notification):
 
 	def create_system_notification(self, doc, context):
 		"""Like Notification.create_system_notification; handles None subject (e.g. Teams DM without email subject)."""
+		route_recipients, route_subject, route_message, _, route_extra = get_email_override_locals()
+		apply_email_override_context(context, route_subject, route_message, route_extra)
+
 		subject = self.subject or ""
-		if "{" in subject:
+		if route_subject:
+			subject = route_subject
+		elif "{" in subject:
 			subject = render_notification_template(self.subject or "", context)
 
 		attachments = self.get_attachment(doc)
 
-		recipients, cc, bcc = self.get_list_of_recipients(doc, context)
-
-		users = recipients + cc + bcc
+		if route_recipients:
+			users = normalize_route_recipients(list(route_recipients))
+		else:
+			recipients, cc, bcc = self.get_list_of_recipients(doc, context)
+			users = recipients + cc + bcc
 
 		if not users:
 			return
 
+		log_type = "Alert"
+		if route_extra and route_extra.get("notification_log_type"):
+			log_type = route_extra.get("notification_log_type")
+
+		from_user = doc.modified_by or doc.owner
+		if route_extra and route_extra.get("notification_log"):
+			from_user = route_extra["notification_log"].get("from_user") or from_user
+
 		notification_doc = {
-			"type": "Alert",
+			"type": log_type,
 			"document_type": get_reference_doctype(doc),
 			"document_name": get_reference_name(doc),
 			"subject": subject,
-			"from_user": doc.modified_by or doc.owner,
+			"from_user": from_user,
 			"email_content": render_notification_template(self.message, context),
 			"attached_file": attachments and json.dumps(attachments[0]),
 		}

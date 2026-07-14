@@ -1,9 +1,14 @@
-// Copyright (c) 2025, AgriTheory and contributors
+// Copyright (c) 2026, AgriTheory and contributors
 // For license information, please see license.txt
 
 frappe.provide('frappe.notification')
 
-const DM_NOTIFICATION_CHANNELS = ['Slack DM', 'Teams DM']
+const DM_CHANNELS = ['Slack DM', 'Teams DM']
+const MARKDOWN_EXAMPLE_CHANNELS = ['Slack', 'System Notification', 'SMS', ...DM_CHANNELS]
+
+function uses_email_receiver_fields(channel) {
+	return channel === 'Email' || DM_CHANNELS.includes(channel)
+}
 
 frappe.notification.setup_fieldname_select = function (frm) {
 	if (!frm.doc.document_type) {
@@ -40,7 +45,7 @@ frappe.notification.setup_fieldname_select = function (frm) {
 		frm.set_df_property('date_changed', 'options', get_date_change_options())
 
 		let receiver_fields = []
-		if (frm.doc.channel === 'Email' || DM_NOTIFICATION_CHANNELS.includes(frm.doc.channel)) {
+		if (uses_email_receiver_fields(frm.doc.channel)) {
 			receiver_fields = $.map(fields, function (d) {
 				if (frappe.model.table_fields.includes(d.fieldtype)) {
 					let child_fields = frappe.get_doc('DocType', d.options).fields
@@ -49,9 +54,8 @@ frappe.notification.setup_fieldname_select = function (frm) {
 							? get_select_options(df, d.fieldname)
 							: null
 					})
-				} else {
-					return d.options == 'Email' || (d.options == 'User' && d.fieldtype == 'Link') ? get_select_options(d) : null
 				}
+				return d.options == 'Email' || (d.options == 'User' && d.fieldtype == 'Link') ? get_select_options(d) : null
 			})
 		} else if (['WhatsApp', 'SMS'].includes(frm.doc.channel)) {
 			receiver_fields = $.map(fields, function (d) {
@@ -72,4 +76,49 @@ frappe.notification.setup_fieldname_select = function (frm) {
 
 		frm.set_df_property('from_attach_field', 'options', [''].concat(attach_options))
 	})
+}
+
+frappe.notification.setup_example_message = function (frm) {
+	let template = ''
+	if (frm.doc.channel === 'Email') {
+		template = `<h5>Message Example</h5>
+
+<pre>&lt;h3&gt;Order Overdue&lt;/h3&gt;
+
+&lt;p&gt;Transaction {{ doc.name }} has exceeded Due Date. Please take necessary action.&lt;/p&gt;
+
+&lt;!-- show last comment --&gt;
+{% if comments %}
+Last comment: {{ comments[-1].comment }} by {{ comments[-1].by }}
+{% endif %}
+
+&lt;h4&gt;Details&lt;/h4&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Customer: {{ doc.customer }}
+&lt;li&gt;Amount: {{ doc.grand_total }}
+&lt;/ul&gt;
+</pre>
+		`
+	} else if (MARKDOWN_EXAMPLE_CHANNELS.includes(frm.doc.channel)) {
+		template = `<h5>Message Example</h5>
+
+<pre>*Order Overdue*
+
+Transaction {{ doc.name }} has exceeded Due Date. Please take necessary action.
+
+<!-- show last comment -->
+{% if comments %}
+Last comment: {{ comments[-1].comment }} by {{ comments[-1].by }}
+{% endif %}
+
+*Details*
+
+• Customer: {{ doc.customer }}
+• Amount: {{ doc.grand_total }}
+</pre>`
+	}
+	if (template) {
+		frm.set_df_property('message_examples', 'options', template)
+	}
 }

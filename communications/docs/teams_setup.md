@@ -1,7 +1,12 @@
 <!-- Copyright (c) 2026, AgriTheory and contributors
 For license information, please see license.txt-->
 
-# Teams DM integration (Bot Framework)
+# Teams DM Setup
+
+<div class="byline">
+  Tyler Matteson 2026-06-24
+</div>
+
 
 How to send **Microsoft Teams** direct messages from ERPNext when a **Notification** fires, using the **Bot Framework** connector and the **Teams Webhook URL** doctype.
 
@@ -101,4 +106,5 @@ client.send_dm_to_user("user@contoso.com", message="<p>Hello</p>")
 
 ## Related
 
-- [Desk notifications and chat integrations](./integrations.md) (Slack DM, override overview).
+- [Notification Channels](./notification_channels.md)
+- [Slack DM Setup](./slack_setup.md)

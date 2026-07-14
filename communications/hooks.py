@@ -20,11 +20,10 @@ required_apps = ["erpnext", "hrms"]
 # 	}
 # ]
 
-# Desk JS: there is no communications.bundle.js entry. Phone ControlData + formatter ship as
-# public/js/teams.bundle.js (esbuild discovers *.bundle.js under public/). Website calendar uses
-# web_include_js below, not app_include_js.
+# Desk JS: Phone ControlData + formatter ship in communications.bundle.js (esbuild discovers
+# *.bundle.js under public/). Website calendar uses web_include_js below, not app_include_js.
 app_include_js = [
-	"teams.bundle.js",
+	"communications.bundle.js",
 ]
 app_include_css = ["/assets/communications/css/public_calendar.css"]
 
@@ -38,7 +37,9 @@ web_include_js = "public_calendar.bundle.js"
 
 # page_js = {"page" : "public/js/file.js"}
 
-# doctype_js = {"doctype": "public/js/doctype.js"}
+doctype_js = {
+	"Notification": "public/js/notification_custom.js",
+}
 # doctype_list_js = {"doctype": "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype": "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype": "public/js/doctype_calendar.js"}
