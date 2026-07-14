@@ -2,6 +2,7 @@
 	"custom_fields": [
 		{
 			"name": "Event-video_conference_provider",
+			"dt": "Event",
 			"fieldname": "video_conference_provider",
 			"fieldtype": "Select",
 			"label": "Video Conference Provider",
@@ -11,6 +12,7 @@
 		},
 		{
 			"name": "Event-video_conference_meeting_id",
+			"dt": "Event",
 			"fieldname": "video_conference_meeting_id",
 			"fieldtype": "Data",
 			"label": "Meeting ID",
@@ -20,6 +22,7 @@
 		},
 		{
 			"name": "Event-video_conference_url",
+			"dt": "Event",
 			"fieldname": "video_conference_url",
 			"fieldtype": "Data",
 			"label": "Meeting URL",
@@ -29,6 +32,7 @@
 		},
 		{
 			"name": "Event-video_conference_data",
+			"dt": "Event",
 			"fieldname": "video_conference_data",
 			"fieldtype": "JSON",
 			"label": "Meeting Data",

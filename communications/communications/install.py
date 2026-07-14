@@ -8,8 +8,8 @@ Installation hooks for Public Calendar.
 import frappe
 
 from communications.communications.email_override_defaults import (
-	create_default_email_override_notifications,
 	configure_slack_dm_override_notifications,
+	create_default_email_override_notifications,
 )
 
 

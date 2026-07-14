@@ -137,12 +137,18 @@ def configure_slack_dm_override_notifications(slack_webhook_url: str | None = No
 		if not frappe.db.exists("Notification", name):
 			continue
 
-		doc = frappe.get_doc("Notification", name)
-		doc.channel = "Slack DM"
-		doc.slack_webhook_url = slack_webhook_url
-		doc.enabled = 1
-		doc.send_system_notification = 1
-		doc.save(ignore_permissions=True)
+		# Channel is set_only_once on Notification; use db.set_value during migrate.
+		frappe.db.set_value(
+			"Notification",
+			name,
+			{
+				"channel": "Slack DM",
+				"slack_webhook_url": slack_webhook_url,
+				"enabled": 1,
+				"send_system_notification": 1,
+			},
+			update_modified=True,
+		)
 
 	from communications.communications.email_overrides import invalidate_email_override_cache
 
