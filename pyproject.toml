@@ -1,6 +1,6 @@
 [project]
 name = "communications"
-version = "15.9.0"
+version = "16.0.0"
 description = "Messaging and telephony extensions for Frappe"
 readme = "README.md"
 requires-python = ">=3.14,<3.15"
@@ -62,8 +62,11 @@ pytest-order = "~=1.2.1"
 [tool.pytest.ini_options]
 addopts = "-s --disable-warnings"
 
-[tool.semantic_release.branches.version]
-match = "version-(15|16)"
+[tool.semantic_release.branches.version-16]
+match = "^version-16$"
+
+[tool.semantic_release.branches.version-15]
+match = "^version-15$"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
