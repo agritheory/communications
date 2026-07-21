@@ -10,6 +10,17 @@ app_license = "mit"
 
 required_apps = ["erpnext", "hrms"]
 
+flyin = {
+	"slots": {
+		"communications-chat": {
+			"title": "Messages",
+			"icon": "communications",
+			"component": "./communications/public/js/flyin/ChatFlyin.vue",
+			"badge_method": "communications.api.chat.api.get_unread_count",
+		},
+	},
+}
+
 # add_to_apps_screen = [
 # 	{
 # 		"name": "communications",
@@ -24,8 +35,14 @@ required_apps = ["erpnext", "hrms"]
 # *.bundle.js under public/). Website calendar uses web_include_js below, not app_include_js.
 app_include_js = [
 	"communications.bundle.js",
+	"chat.flyin.bundle.js",
 ]
-app_include_css = ["/assets/communications/css/public_calendar.css"]
+app_include_css = [
+	"/assets/communications/css/public_calendar.css",
+	"/assets/communications/css/flyin.css",
+	"chat.flyin.bundle.css",
+]
+app_include_icons = ["communications/icons/at-icons_communications-icon.svg"]
 
 web_include_css = "/assets/communications/css/public_calendar.css"
 web_include_js = "public_calendar.bundle.js"
@@ -101,6 +118,9 @@ website_route_rules = [
 ]
 
 doc_events = {
+	"Communication": {
+		"after_insert": "communications.api.chat.api.notify_new_communication",
+	},
 	"Event": {
 		"validate": "communications.communications.overrides.event.validate",
 		"on_update": "communications.communications.overrides.event.on_update",

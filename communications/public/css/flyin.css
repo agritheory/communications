@@ -1,0 +1,125 @@
+/* Flyin slot styling for communications chat — width follows flyin defaults (380px; 456px xl+ on this bench) */
+
+.communications-chat-flyin-host {
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.communications-chat-flyin-host .chat-flyin-root,
+.communications-chat-flyin-host .chat-container {
+	height: 100% !important;
+	max-height: 100%;
+	min-height: 0;
+}
+
+.communications-chat-flyin-host .chat-window--flyin {
+	flex: 1;
+	min-height: 0;
+}
+
+.flyout-drawer:has(.communications-chat-flyin-host) .vac-media-preview {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 20;
+}
+
+.flyout-drawer:has(.communications-chat-flyin-host) .vac-emoji-picker.vac-picker-reaction {
+	position: absolute;
+}
+
+/* Fallback icon when flyin desk bundle predates the communications icon map entry */
+.flyin-nav-item[data-flyin-slot='communications-chat'] .flyin-trigger:not(:has(svg)) {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23525252' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7.9 20A9 9 0 1 0 4 16.1L2 22Z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: center;
+	min-width: 18px;
+	min-height: 18px;
+}
+
+.flyout-header-tabs__tab[aria-label='Messages'] .flyout-header-tabs__icon:empty,
+.flyout-header-tabs__tab[title='Messages'] .flyout-header-tabs__icon:empty {
+	display: inline-block;
+	width: 18px;
+	height: 18px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7.9 20A9 9 0 1 0 4 16.1L2 22Z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 18px 18px;
+}
+
+.flyin-nav-item[data-flyin-slot='communications-chat'] .flyin-trigger svg,
+.flyout-header-tabs__tab[aria-label='Messages'] .flyout-header-tabs__icon svg {
+	width: 18px;
+	height: 18px;
+	color: var(--text-color, #525252);
+}
+
+.communications-chat-flyin-host .chat-toolbar {
+	padding: 8px 12px;
+}
+
+.communications-chat-flyin-host .chat-toolbar--flyin {
+	min-height: 44px;
+}
+
+.communications-chat-flyin-host .toolbar-title {
+	font-size: 15px;
+}
+
+.communications-chat-flyin-host .conversations-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border: 1px solid var(--border-color, #e1e4e8);
+	border-radius: 6px;
+	background: var(--card-bg, #fff);
+	color: var(--text-color, #0a0a0a);
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.communications-chat-flyin-host .conversations-toggle--active {
+	background: var(--bg-light-gray, #f3f4f6);
+	border-color: var(--primary, #1976d2);
+	color: var(--primary, #1976d2);
+}
+
+.communications-chat-flyin-host .conversations-toggle__badge {
+	background: #dc3545;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 1px 6px;
+	border-radius: 10px;
+	min-width: 18px;
+	text-align: center;
+}
+
+/* Full-width messaging when conversations panel is collapsed */
+.communications-chat-flyin-host .chat-window--flyin .vac-chat-container {
+	min-height: 0;
+}
+
+.communications-chat-flyin-host .chat-window--flyin .chat-messages-column,
+.communications-chat-flyin-host .chat-window--flyin .vac-col-messages {
+	flex: 1 1 auto;
+	width: 100%;
+	min-width: 0;
+}
+
+/* Match autoreader / upro_erp flyin width on xl+ viewports (456px = 380px + 20%) */
+@media (min-width: 1280px) {
+	.flyout-drawer:has(.communications-chat-flyin-host) {
+		width: 456px !important;
+	}
+
+	body.flyin-drawer-open.flyin-drawer-push .flyout-drawer:has(.communications-chat-flyin-host) {
+		top: var(--navbar-height, 60px);
+		bottom: 0;
+		height: auto;
+	}
+}

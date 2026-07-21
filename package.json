@@ -4,16 +4,33 @@
 	"description": "Messaging and telephony extensions for Frappe",
 	"type": "module",
 	"scripts": {
-		"test": "vitest",
-		"test:ui": "vitest --ui",
-		"test:coverage": "vitest run --coverage",
-		"test:watch": "vitest watch"
+		"build": "vite build && node node_modules/@agritheory/flyin/dist/cli/build-if-host.js",
+		"build:chat": "vite build",
+		"build:flyin": "node node_modules/@agritheory/flyin/dist/cli/build-if-host.js"
 	},
 	"dependencies": {
+		"@agritheory/flyin": "^15.0.0",
 		"@vitest/ui": "^1.2.0",
+		"micromark": "^3.1.0",
+		"micromark-extension-gfm": "^2.0.1",
+		"emoji-picker-element": "^1.26.0",
+		"frappe-ui": "^0.1.262",
 		"jsdom": "^23.2.0",
 		"libphonenumber-js": "^1.12.15",
-		"vitest": "^1.2.0"
+		"vitest": "^1.2.0",
+		"vue": "^3.5.14",
+		"vue-advanced-chat": "github:agritheory/vue-advanced-chat#2.1.2-agritheory.1",
+		"vue-router": "^4.5.0"
+	},
+	"devDependencies": {
+		"@iconify-json/lucide": "^1.2.90",
+		"@types/node": "^22.15.32",
+		"@vitejs/plugin-vue": "^5.2.4",
+		"@vue/compiler-sfc": "^3.5.27",
+		"sass": "^1.83.0",
+		"typescript": "^5.8.3",
+		"unplugin-icons": "^23.0.1",
+		"vite": "^6.3.5"
 	},
 	"packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

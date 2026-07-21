@@ -15,6 +15,7 @@ env:
 permissions:
   contents: read
   pull-requests: write
+  packages: read
 
 jobs:
   tests:
@@ -49,6 +50,8 @@ jobs:
         with:
           node-version: 18
           check-latest: true
+          registry-url: https://npm.pkg.github.com
+          scope: '@agritheory'
           cache: 'yarn'
 
       - name: Add to Hosts
@@ -65,6 +68,12 @@ jobs:
 
       - name: Install JS Dependencies
         run: yarn --prefer-offline
+
+      - name: Install JS Dependencies
+        run: yarn --prefer-offline
+
+      - name: Build frontend assets
+        run: yarn build
 
       - name: Install App Dependencies
         run: bash ${{ github.workspace }}/.github/helper/install_dependencies.sh
