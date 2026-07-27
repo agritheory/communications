@@ -1,6 +1,7 @@
 # Copyright (c) 2026, AgriTheory and contributors
 # For license information, please see license.txt
 
+import json
 from unittest.mock import patch
 
 import frappe
@@ -76,3 +77,56 @@ def test_create_system_notification_falls_back_to_recipients():
 	mock_enqueue.assert_called_once()
 	users, _notification_doc = mock_enqueue.call_args[0]
 	assert users == ["owner@example.com"]
+
+
+def test_create_system_notification_omits_empty_attachments():
+	notification = CommunicationsNotification(
+		{
+			"doctype": "Notification",
+			"name": "Test Empty Attachments",
+			"channel": "Email",
+			"subject": "Alert",
+			"message": "Hello",
+		}
+	)
+	doc = frappe.get_doc({"doctype": "User", "name": "Administrator", "email": "admin@example.com"})
+
+	with patch.object(
+		CommunicationsNotification,
+		"get_list_of_recipients",
+		return_value=(["owner@example.com"], [], []),
+	):
+		with patch.object(CommunicationsNotification, "get_attachment", return_value=[]):
+			with patch(
+				"communications.communications.overrides.notification.enqueue_create_notification"
+			) as mock_enqueue:
+				notification.create_system_notification(doc, {"doc": doc})
+
+	assert mock_enqueue.call_args.args[1]["attached_file"] is None
+
+
+def test_create_system_notification_serializes_attachment():
+	notification = CommunicationsNotification(
+		{
+			"doctype": "Notification",
+			"name": "Test Attachment",
+			"channel": "Email",
+			"subject": "Alert",
+			"message": "Hello",
+		}
+	)
+	doc = frappe.get_doc({"doctype": "User", "name": "Administrator", "email": "admin@example.com"})
+	attachment = {"doctype": "Material Request", "name": "SR-2026-00392", "print_format": "Standard"}
+
+	with patch.object(
+		CommunicationsNotification,
+		"get_list_of_recipients",
+		return_value=(["owner@example.com"], [], []),
+	):
+		with patch.object(CommunicationsNotification, "get_attachment", return_value=[attachment]):
+			with patch(
+				"communications.communications.overrides.notification.enqueue_create_notification"
+			) as mock_enqueue:
+				notification.create_system_notification(doc, {"doc": doc})
+
+	assert json.loads(mock_enqueue.call_args.args[1]["attached_file"]) == attachment

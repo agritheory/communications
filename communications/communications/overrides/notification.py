@@ -467,6 +467,6 @@ class CommunicationsNotification(Notification):
 			"subject": subject,
 			"from_user": from_user,
 			"email_content": render_notification_template(self.message, context),
-			"attached_file": attachments and json.dumps(attachments[0]),
+			"attached_file": json.dumps(attachments[0]) if attachments else None,
 		}
 		enqueue_create_notification(users, notification_doc)
