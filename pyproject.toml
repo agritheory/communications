@@ -1,6 +1,6 @@
 [project]
 name = "communications"
-version = "15.9.1"
+version = "15.9.2"
 description = "Messaging and telephony extensions for Frappe"
 authors = [
     { name = "AgriTheory", email = "support@agritheory.dev"}

@@ -1,7 +1,7 @@
 # Copyright (c) 2025, AgriTheory and contributors
 # For license information, please see license.txt
 
-__version__ = "15.9.1"
+__version__ = "15.9.2"
 
 from communications.communications.email_override_patches import apply_email_override_patches
 

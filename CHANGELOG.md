@@ -5,6 +5,14 @@ For license information, please see license.txt-->
 
 <!-- version list -->
 
+## v15.9.2 (2026-07-28)
+
+### Bug Fixes
+
+- Frappe.exceptions.ValidationError: Value for Attached File cannot be a list
+  ([`f57823d`](https://github.com/agritheory/communications/commit/f57823dbd8fe859ab9dec03d03ffbd10d7fc0c8f))
+
+
 ## v15.9.1 (2026-07-14)
 
 
