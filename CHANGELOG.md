@@ -5,6 +5,19 @@ For license information, please see license.txt-->
 
 <!-- version list -->
 
+## v15.9.3 (2026-11-16)
+
+### Bug Fixes
+
+- Stop notification flood, add test
+  ([`c659606`](https://github.com/agritheory/communications/commit/c6596068614d325138def72dff0f8f4c35b867ee))
+
+### Continuous Integration
+
+- Use 24 for version-15 benches
+  ([`8323abe`](https://github.com/agritheory/communications/commit/8323abe0ea0a3dd14e5b0217506cae9aa87425f8))
+
+
 ## v15.9.2 (2026-07-28)
 
 ### Bug Fixes
