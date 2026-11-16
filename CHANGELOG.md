@@ -5,6 +5,14 @@ For license information, please see license.txt-->
 
 <!-- version list -->
 
+## v15.10.0 (2026-11-16)
+
+### Features
+
+- Recipients override
+  ([`46b133a`](https://github.com/agritheory/communications/commit/46b133aea0027c01642485204662331f98b9c14d))
+
+
 ## v15.9.3 (2026-11-16)
 
 ### Bug Fixes
