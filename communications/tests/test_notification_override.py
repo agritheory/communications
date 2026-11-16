@@ -43,10 +43,43 @@ def test_create_system_notification_uses_route_recipients():
 		assert notification_doc["type"] == "Assignment"
 		assert notification_doc["subject"] == "Routed Subject"
 		assert notification_doc["from_user"] == "admin@example.com"
+		assert notification_doc["from_email_override"] is True
 	finally:
 		frappe.local.email_override_recipients = None
 		frappe.local.email_override_subject = None
 		frappe.local.email_override_message = None
+		frappe.local.email_override_extra = None
+
+
+def test_create_system_notification_skips_when_desk_log_exists():
+	notification = CommunicationsNotification(
+		{
+			"doctype": "Notification",
+			"name": "Test Override Notification",
+			"channel": "Slack DM",
+			"subject": "Override Subject",
+			"message": "{{ sendmail_subject }}",
+			"send_system_notification": 1,
+		}
+	)
+	doc = frappe.get_doc({"doctype": "User", "name": "Administrator", "email": "admin@example.com"})
+	frappe.local.email_override_recipients = ["test@example.com"]
+	frappe.local.email_override_subject = "Routed Subject"
+	frappe.local.email_override_extra = {
+		"desk_notification_exists": True,
+		"notification_log_type": "Assignment",
+	}
+
+	try:
+		with patch(
+			"communications.communications.overrides.notification.enqueue_create_notification"
+		) as mock_enqueue:
+			notification.create_system_notification(doc, {"doc": doc})
+
+		mock_enqueue.assert_not_called()
+	finally:
+		frappe.local.email_override_recipients = None
+		frappe.local.email_override_subject = None
 		frappe.local.email_override_extra = None
 
 

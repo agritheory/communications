@@ -433,6 +433,11 @@ class CommunicationsNotification(Notification):
 	def create_system_notification(self, doc, context):
 		"""Like Notification.create_system_notification; handles None subject (e.g. Teams DM without email subject)."""
 		route_recipients, route_subject, route_message, _, route_extra = get_email_override_locals()
+		# The desk Notification Log that triggered this override already exists.
+		# Creating another one re-enters send_notification_email and floods Slack.
+		if route_extra.get("desk_notification_exists"):
+			return
+
 		apply_email_override_context(context, route_subject, route_message, route_extra)
 
 		subject = self.subject or ""
@@ -468,5 +473,6 @@ class CommunicationsNotification(Notification):
 			"from_user": from_user,
 			"email_content": render_notification_template(self.message, context),
 			"attached_file": json.dumps(attachments[0]) if attachments else None,
+			"from_email_override": True,
 		}
 		enqueue_create_notification(users, notification_doc)

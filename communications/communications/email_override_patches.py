@@ -30,6 +30,27 @@ def patch_sendmail_recursion_guard() -> None:
 	frappe.sendmail = guarded_sendmail
 
 
+def patch_make_notification_logs() -> None:
+	"""Keep override-created desk logs from sending mail again."""
+	from frappe.desk.doctype.notification_log import notification_log as notification_log_module
+
+	original = notification_log_module.make_notification_logs
+
+	def make_notification_logs(doc, users):
+		from_override = False
+		if isinstance(doc, dict):
+			from_override = bool(doc.pop("from_email_override", None))
+		if from_override:
+			frappe.flags.in_email_override_system_notification = True
+		try:
+			return original(doc, users)
+		finally:
+			if from_override:
+				frappe.flags.in_email_override_system_notification = False
+
+	notification_log_module.make_notification_logs = make_notification_logs
+
+
 def patch_send_notification_email() -> None:
 	from frappe.desk.doctype.notification_log import notification_log as notification_log_module
 	from frappe.utils import get_url_to_form, strip_html
@@ -44,6 +65,10 @@ def patch_send_notification_email() -> None:
 		PATH: frappe/desk/doctype/notification_log/notification_log.py
 		METHOD: send_notification_email
 		"""
+		# Desk logs created by an email override already replaced the outbound email.
+		if getattr(frappe.flags, "in_email_override_system_notification", False):
+			return
+
 		if doc.type == "Energy Point" and doc.email_content is None:
 			return
 
@@ -76,6 +101,7 @@ def patch_send_notification_email() -> None:
 				"header": [header, "orange"],
 				"now": frappe.flags.in_test,
 				"notification_log_type": log_type,
+				"desk_notification_exists": True,
 				"notification_log": {
 					"type": doc.type,
 					"subject": doc.subject,
@@ -247,6 +273,7 @@ def patch_evaluate_alert() -> None:
 
 def apply_email_override_patches() -> None:
 	patch_sendmail_recursion_guard()
+	patch_make_notification_logs()
 	patch_send_notification_email()
 	patch_document_follow()
 	patch_workflow_action()
