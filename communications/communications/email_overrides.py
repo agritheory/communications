@@ -127,6 +127,8 @@ def build_override_extra(kwargs: dict) -> dict[str, Any] | None:
 		extra["notification_log_type"] = kwargs.get("notification_log_type")
 	if kwargs.get("notification_log"):
 		extra["notification_log"] = kwargs.get("notification_log")
+	if kwargs.get("desk_notification_exists"):
+		extra["desk_notification_exists"] = True
 
 	return extra or None
 

@@ -26,8 +26,14 @@ mysql --host 127.0.0.1 --port 3306 -u root -e "GRANT ALL PRIVILEGES ON \`test_si
 mysql --host 127.0.0.1 --port 3306 -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root'"  # match site_config
 mysql --host 127.0.0.1 --port 3306 -u root -e "FLUSH PRIVILEGES"
 
-echo BRANCH_NAME: "${BRANCH_NAME}"
-git clone https://github.com/frappe/frappe --branch ${BRANCH_NAME}
+if [ "${GITHUB_EVENT_NAME}" = 'pull_request' ]; then
+    BRANCH_NAME="${GITHUB_BASE_REF}"
+else
+    BRANCH_NAME="${GITHUB_REF_NAME}"
+fi
+echo "BRANCH_NAME: ${BRANCH_NAME}"
+
+git clone https://github.com/frappe/frappe --branch "${BRANCH_NAME}"
 bench init frappe-bench --frappe-path ~/frappe --python "$(which python)" --skip-assets --ignore-exist
 
 mkdir ~/frappe-bench/sites/test_site
@@ -40,12 +46,13 @@ sed -i 's/schedule:/# schedule:/g' Procfile
 sed -i 's/socketio:/# socketio:/g' Procfile
 sed -i 's/redis_socketio:/# redis_socketio:/g' Procfile
 
-bench get-app erpnext https://github.com/frappe/erpnext --branch ${BRANCH_NAME} --resolve-deps --skip-assets
-bench get-app hrms https://github.com/frappe/hrms --branch ${BRANCH_NAME} --skip-assets
+bench get-app erpnext --branch "${BRANCH_NAME}" --skip-assets --overwrite
+bench get-app hrms --branch "${BRANCH_NAME}" --skip-assets --overwrite
 bench get-app communications "${GITHUB_WORKSPACE}" --skip-assets
 
 printf '%s\n' 'frappe' 'erpnext' 'hrms' 'communications' > ~/frappe-bench/sites/apps.txt
 bench setup requirements --python
+bench setup requirements --dev
 bench use test_site
 bench set-config -g server_script_enabled 1
 
@@ -59,13 +66,10 @@ bench --site test_site reinstall --yes --admin-password admin
 mkdir -p ~/frappe-bench/sites/assets
 echo '{}' > ~/frappe-bench/sites/assets/assets.json
 
-bench setup requirements --dev
-
 echo "BENCH VERSION NUMBERS:"
 bench version
 echo "SITE LIST-APPS:"
 bench list-apps
 
 bench start &> bench_run_logs.txt &
-CI=Yes &
-bench execute 'communications.tests.setup.before_test'
+CI=Yes
