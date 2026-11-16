@@ -21,6 +21,10 @@ from communications.communications.doctype.teams_webhook_url.teams_webhook_url i
 	TeamsMessagingError,
 )
 from communications.communications.email_overrides import normalize_route_recipients
+from communications.communications.notification_recipients import (
+	resolve_recipient_hook,
+	validate_recipient_hook_keys,
+)
 from communications.communications.slack_markdown import convert_html_to_slack_mrkdwn
 
 # Error Log title field max 140 chars
@@ -170,8 +174,19 @@ class CommunicationsNotification(Notification):
 
 		# self.validate_forbidden_types()
 		self.validate_condition()
+		validate_recipient_hook_keys(self)
 		self.validate_standard()
 		frappe.cache().hdel("notifications", self.document_type)
+
+	def get_list_of_recipients(self, doc, context):
+		recipients, cc, bcc = super().get_list_of_recipients(doc, context)
+		for row in self.recipients:
+			if not row.get("receiver_by_hook"):
+				continue
+			if row.condition and not frappe.safe_eval(row.condition, None, context):
+				continue
+			recipients.extend(resolve_recipient_hook(row.receiver_by_hook, doc, self, row, context))
+		return list(set(recipients)), cc, bcc
 
 	def send_an_email(self, doc, context):
 		"""Honor recipients/subject/body lifted from an intercepted frappe.sendmail call."""

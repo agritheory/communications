@@ -1,0 +1,19 @@
+{
+  "doctype": "Notification Recipient",
+  "custom_fields": [
+    {
+      "doctype": "Custom Field",
+      "dt": "Notification Recipient",
+      "fieldname": "receiver_by_hook",
+      "fieldtype": "Autocomplete",
+      "idx": 5,
+      "insert_after": "receiver_by_role",
+      "in_list_view": 1,
+      "label": "Receiver By Hook",
+      "module": "Communications",
+      "name": "Notification Recipient-receiver_by_hook"
+    }
+  ],
+  "property_setters": [],
+  "sync_on_migrate": 1
+}
