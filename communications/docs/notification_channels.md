@@ -25,6 +25,28 @@ Configure the credential DocTypes, then create **Notification** records with **C
 
 DM notifications are enqueued as background jobs after commit when the referenced document is submitted; otherwise they send synchronously.
 
+When emails are muted (`mute_emails` in site config or `frappe.flags.mute_emails`), Slack DM sends are skipped for doc-event notifications. Nothing is posted and nothing is written to the Error Log. Email Override routes still send. Unmute the site to test Slack DM delivery locally.
+
+## Receiver By Hook
+
+Each row in the **Notification** recipients child table can set **Receiver By Hook** (Autocomplete). Options come from the `notification_recipients` hook registry in each app’s `hooks.py`. The key is a human-readable title (for example **Sales Team**); that exact string is stored on the row and shown in the Autocomplete.
+
+Register a resolver:
+
+```python
+notification_recipients = {
+	"Sales Team": "my_app.notifications.sales_order_team",
+}
+```
+
+The resolver is called as `fn(doc, notification, recipient_row, context)` and must return a list of email addresses and/or User names. Results are normalized to email and merged with **Receiver By Document Field**, **Receiver By Role**, and CC/BCC on the same row. Values that are neither a valid email nor an existing User are dropped. The row’s **Condition** still gates whether that row runs (including the hook). If multiple apps register the same title, the last installed app wins.
+
+A resolver that raises is logged on the **Notification** error log and contributes no recipients; the rest of the rows still send. Saving a **Notification** whose row names an unregistered hook fails validation, so renaming a key in `hooks.py` requires updating existing rows.
+
+`CommunicationsNotification.get_list_of_recipients` applies hooks for Email, Slack DM, Teams DM, and System Notification. SMS is unchanged.
+
+Run `bench migrate` after installing to sync the **Receiver By Hook** custom field (`custom/notification_recipient.json`).
+
 ## Email Override
 
 On app import, **`email_override_patches.py`** patches specific Frappe email emitters so configured **Notification** records can replace selected stock emails (desk **Notification Log** types, document follow, workflow, event digest).

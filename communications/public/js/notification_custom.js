@@ -11,6 +11,15 @@ function uses_email_receiver_fields(channel) {
 }
 
 frappe.notification.setup_fieldname_select = function (frm) {
+	frappe.call({
+		method: 'communications.communications.notification_recipients.get_recipient_hook_options',
+		callback(r) {
+			if (r.message) {
+				frm.fields_dict.recipients.grid.update_docfield_property('receiver_by_hook', 'options', r.message)
+			}
+		},
+	})
+
 	if (!frm.doc.document_type) {
 		return
 	}

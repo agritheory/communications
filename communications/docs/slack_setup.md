@@ -57,6 +57,8 @@ Save and test on a low-risk document or Notification Log type. Failures are logg
 | `not_in_channel` / DM errors | Bot needs **`im:write`**; user may need to have interacted with the app once. |
 | `invalid_auth` | Token revoked or wrong token type; reinstall app and update **Slack Webhook URL**. |
 | Empty message | Check Jinja in **Message**; for Email Override routes use `sendmail_subject` / `sendmail_message` variables. |
+| Nothing sent, no Error Log | Emails are muted on the site (`mute_emails`). Doc-event Slack DMs are skipped while muted; unmute to test. |
+| Nothing sent for a hook row | Run the resolver in bench console against the document; it must return emails or User names. See [Receiver By Hook](./notification_channels.md#receiver-by-hook). |
 
 ## Related
 
